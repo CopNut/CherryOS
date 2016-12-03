@@ -6,7 +6,7 @@ LINKPATH	= ../link/
 
 
 MAKE     = $(TOOLPATH)make.exe -r
-NASM     = $(TOOLPATH)nasm/nasm.exe
+NASM     = $(TOOLPATH)nasm.exe
 DD 		 = $(TOOLPATH)dd.exe
 GCC		 = gcc
 LD		 = ld
