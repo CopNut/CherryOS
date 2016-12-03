@@ -1,0 +1,12 @@
+*.bin
+
+*.o
+!lib/*.o
+
+*.tmp
+
+*.img
+!blankFloppyDisk.img
+
+*.bat
+*.pdf
