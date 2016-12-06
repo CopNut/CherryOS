@@ -41,7 +41,7 @@ asFunc.o : asFunc.asm Makefile
 	$(AS) asFunc.asm -o asFunc.o
 
 CherryKernel.tmp : $(OBJ_CHERRYKERNEL) $(LINKPATH)link.ld Makefile
-	$(LD) -T $(LINKPATH)link.ld -o CherryKernel.tmp $(OBJ_CHERRYKERNEL)
+	$(LD) -T $(LINKPATH)link.ld -o CherryKernel.tmp $(OBJ_CHERRYKERNEL) -Map CherryKernel.map
 
 CherryKernel.bin : CherryKernel.tmp Makefile
 	$(OBJCOPY) -O binary -j .text CherryKernel.tmp CherryKernel.bin
