@@ -1,167 +1,36 @@
-/*asmFunc.asm*/
-//----------boot information----------
-typedef struct Bootinfo{
-	char cyls, leds;
-	char vmode, reserve;
-	short xsize, ysize;
-	char *vram;
-	char vga_installed, display_statue;
-	short vga_characteristic_parameter;
-	char hd0_data[16];
-	char hd1_data[16];
-}Bootinfo, *BootinfoPtr;
-
-void io_hlt(void);
-void io_cli(void);
-void io_sti(void);
-void io_stihlt(void);
-unsigned char io_8bits_in(short port);
-void io_8bits_out(short port,unsigned char data);
-int io_load_eflags(void);
-void io_store_eflags(int eflags);
-int io_load_cr0(void);
-void io_store_cr0(int cr0);
 void asm_inthandler21(void);
 void asm_inthandler27(void);
 void asm_inthandler2c(void);
 
-#define ADDR_BOOTINFO 0x90000
+#ifndef BOOTINFO_H
+#define BOOTINFO_H
+#include <bootinfo.h>
+#endif
 
 
-
-//----------object screen----------
-typedef struct Screen {
-	char *vram;
-	unsigned short xsize, ysize;
-	unsigned int memsize;
-	unsigned char bcolor;
-	unsigned char *rgbTable;
-}Screen, *ScreenPtr;
-
-//Parameter initialization, palette initialization and draw background with pure color(bcolor)
-void Screen__construct(Screen *this, Bootinfo *binfo, unsigned char bcolor);
-
-//Palette initialization
-void Screen_init_palette(Screen *this);
-
-//draw background
-void Screen_draw_bg(Screen *this);
-
-#define VGA_TOTAL_BYTES 0xfa00
-#define PALETTE_START 0
-#define PALETTE_END 15
-#define BLACK 0
-#define RED 1
-#define YELLOW 2
-#define GREEN 3
-#define CYAN 4
-#define BLUE 5
-#define PINK 6
-#define WHITE 7
-#define GRAY 8
-#define DARK_RED 9
-#define DARK_YELLOW 10
-#define DARK_GREEN 11
-#define DARK_CYAN 12
-#define DARK_BLUE 13
-#define DARK_PINK 14
-#define DARK_GRAY 15
-#define BCOLOR PINK
+#ifndef SCREEN_H
+#define SCREEN_H 1
+#include <screen.h>
+#endif
 
 
-
-//----------object mouse----------
-typedef struct Mouse {
-	unsigned char buf_code[128], buf_dcode[3], phase;
-	unsigned char xsize, ysize;
-	unsigned short px, py;
-	char rx, ry;
-	unsigned char button;
-	char cursor[160];
-	char bg[160];
-}Mouse, *MousePtr;
-
-//mousebuf[128],decodebuf[3],cursor[160]
-void Mouse__construct(Mouse *this, Bootinfo *binfo);
-
-//
-void Mouse_enable(void);
-
-//decode function
-int Mouse_dcode(Mouse *this, unsigned char data);
-
-//move the mouse
-void Mouse_move(Mouse *this, Screen *scn);
-
-#define MOUSE_XSIZE 10
-#define MOUSE_YSIZE 16
+#ifndef MOUSE_H
+#define MOUSE_H 1
+#include <mouse.h>
+#endif
 
 
-
-//----------object keyboard----------
-typedef struct Keyboard {
-	unsigned char buf_code[32];
-}Keyboard, *KeyboardPtr;
-
-//
-void Keyboard__construct(Keyboard *this);
-
-//wait sendready
-void Keyboard_wait_KBC_sendready(void);
-
-#define PORT_KEYDAT				0x0060
-#define PORT_KEYSTA				0x0064
-#define PORT_KEYCMD				0x0064
-#define KEYSTA_SEND_NOTREADY	0x02
-#define KEYCMD_WRITE_MODE		0x60
-#define KBC_MODE				0x47
-#define KEYCMD_SENDTO_MOUSE		0xd4
-#define MOUSECMD_ENABLE			0xf4
+#ifndef KEYBOARD_H
+#define KEYBOARD_H 1
+#include <keyboard.h>
+#endif
 
 
+#ifndef MEMORY_H
+#define MEMORY_H 1
+#include <memory.h>
+#endif
 
-//----------object memory----------
-typedef struct MemBlock{
-	uint addr, size;
-}MemBlock, *MemBlockPtr;
-
-//32K
-#define MEM_BLOCK_MAX 		4092 //4096 * (4 + 4) - (4 * 8) / 8 = 4092
-typedef struct Memory{
-	uint physize;
-	uint freesize;
-	uint frees;
-	uint maxfrees;
-	uint usesize;
-	uint uses;
-	uint lostsize;
-	uint losts;	
-	MemBlock freeMemBlock[MEM_BLOCK_MAX];
-}Memory, *MemoryPtr;
-
-
-void Memory__construct(Memory *this, uint start, uint end);
-
-//check how much RAM are useful from start to end
-uint Memory_check(uint start, uint end);
-
-uint Memory_alloc(Memory *this, uint size);
-
-int Memory_free(Memory *this, uint addr, uint size);
-
-
-#define ADDR_MEMBUF			0x003c0000
-#define EFLAGE_AC_BIT 		0x00040000
-#define CR0_CACHE_DISABLE 	0x60000000
-#define MEM_CHECK_START 	0x00400000
-#define MEM_CHECK_END 		0xffffffff
-
-
-	void put_font(char *vram, int xsize, int x, int y, char *font, char color);
-	void put_string(char *vram, int xsize, int x, int y, char *string, char color);
-	void get_box(char *vram, int xsize, int x, int y, char *buffer, int bxsize, int bysize);
-	void put_box(char *vram, int xsize, int x, int y, char *buffer, int bxsize, int bysize);
-	void fill_box(char *vram, int xsize, int x, int y, char color, int bxsize, int bysize);
 
 
 

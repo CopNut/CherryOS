@@ -17,7 +17,7 @@ DEL      = del
 
 GCC_OPTION = -fstrength-reduce -fomit-frame-pointer -finline-functions -nostdinc
 DATA_IN_TEXT = -Wa,-R
-OBJ_CHERRYKERNEL = CherryMain.o asmFunc.o asFunc.o isr.o vga.o gdtidt.o fifo.o devices.o $(LIBPATH)ascTable.o $(LIBPATH)cherryLib.o
+OBJ_CHERRYKERNEL = CherryMain.o asmFunc.o asFunc.o isr.o vga.o gdtidt.o fifo.o screen.o keyboard.o mouse.o memory.o $(LIBPATH)ascTable.o $(LIBPATH)cherryLib.o
 
 # 1.  $@     表示要生成的目标
 # 2.  $^     表示全部的依赖文件

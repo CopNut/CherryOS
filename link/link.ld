@@ -7,7 +7,6 @@ SECTIONS
     code = .;
     *(.text)
     *(.rdata)
-    *(.drectve)
     *(.data)
     *(.bss)
     . = ALIGN(4096);

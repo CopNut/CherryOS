@@ -16,6 +16,18 @@
 		#define NULL	((void *) 0)
 	#endif
 	//----------------------function-prompt----------------------------
+	//asmFunc.asm
+	void io_hlt(void);
+	void io_cli(void);
+	void io_sti(void);
+	void io_stihlt(void);
+	unsigned char io_8bits_in(short port);
+	void io_8bits_out(short port,unsigned char data);
+	int io_load_eflags(void);
+	void io_store_eflags(int eflags);
+	int io_load_cr0(void);
+	void io_store_cr0(int cr0);
+
 	/*tools\Cherry\cherryLib.c*/
 	size_t strlen(const char *str);
 	char *strcpy(char *dst,const char *src);
