@@ -1,31 +1,15 @@
 //----------object screen----------
-
-//max sheet
-#define MAX_SHEET 256
-
-typedef struct Sheet{
-	uchar *buf;
-	ushort px, py, xsize, ysize;
-	short height;
-	uchar flag, color, opacity;
-}Sheet, *SheetPtr;
-
 typedef struct Screen {
-	//basic
 	char *vram;
 	uchar *buf_bg;
 	unsigned short xsize, ysize;
 	unsigned int memsize;
 	unsigned char bcolor;
 	unsigned char *rgbTable;
-	//sheet
-	SheetPtr sheetPtr[MAX_SHEET];
-	Sheet sheet[MAX_SHEET];
-	short top;
 }Screen, *ScreenPtr;
 
 //Parameter initialization, palette initialization and draw background with pure color(bcolor)
-void Screen__construct(Screen *this, Bootinfo *binfo, unsigned char bcolor);
+void Screen__construct(Screen *this, Bootinfo *binfo, uchar *buf_bg, unsigned char bcolor);
 
 //Palette initialization
 void Screen_init_palette(Screen *this);
@@ -33,15 +17,7 @@ void Screen_init_palette(Screen *this);
 //draw background
 void Screen_draw_bg(Screen *this);
 
-SheetPtr Screen_alloc(Screen *this, uchar *buf, ushort xsize, ushort ysize, uchar color, uchar opacity);
 
-void Screen_height_shift(Screen *this, SheetPtr sheetPtr, short height_aim);
-
-void Screen_refresh(Screen *this);
-
-void Screen_slide(Screen *this, SheetPtr sheetPtr, short sx, short sy);
-
-void Screen_free(Screen *this, SheetPtr sheetPtr);
 
 void put_font(char *vram, int xsize, int x, int y, char *font, char color);
 void put_string(char *vram, int xsize, int x, int y, char *string, char color);

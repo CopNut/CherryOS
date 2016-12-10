@@ -3,7 +3,7 @@ void asm_inthandler27(void);
 void asm_inthandler2c(void);
 
 #ifndef BOOTINFO_H
-#define BOOTINFO_H
+#define BOOTINFO_H 1
 #include <bootinfo.h>
 #endif
 
@@ -32,7 +32,10 @@ void asm_inthandler2c(void);
 #endif
 
 
-
+#ifndef SHEET_H
+#define SHEET_H 1
+#include <sheet.h>
+#endif
 
 
 

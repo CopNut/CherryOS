@@ -1,3 +1,13 @@
+#ifndef SHEET_H
+#define SHEET_H 1
+#include <sheet.h>
+#endif
+
+#ifndef SCREEN_H
+#define SCREEN_H 1
+#include <screen.h>
+#endif
+
 //----------object mouse----------
 typedef struct Mouse {
 	unsigned char buf_code[128], buf_dcode[3], phase;
@@ -19,7 +29,7 @@ void Mouse_enable(void);
 int Mouse_dcode(Mouse *this, unsigned char data);
 
 //move the mouse
-void Mouse_move(Mouse *this, Screen *scn);
+void Mouse_move(Mouse *this, Screen *scn, Sheet *sht);
 
 #define MOUSE_XSIZE 10
 #define MOUSE_YSIZE 16

@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <bootinfo.h>
-#include <screen.h>
 #include <mouse.h>
 
+extern ShtCtl shtCtl;
 
 void Mouse__construct(Mouse *this, Bootinfo *binfo) {
 	this->phase = 0;
@@ -100,9 +100,8 @@ int Mouse_dcode(Mouse *this, unsigned char data)
 	return -1;
 }
 
-void Mouse_move(Mouse *this, Screen *scn)
+void Mouse_move(Mouse *this, Screen *scn, Sheet *sht)
 {
- 	put_box(scn->vram, scn->xsize, this->px, this->py, this->bg, this->xsize, this->ysize);
 	this->px = ((this->px + this->rx < scn->xsize) && (this->px + this->rx >= 0)) ? this->px + this->rx : this->px;
 	if (this->px + this->rx >= scn->xsize)
 	{
@@ -120,9 +119,7 @@ void Mouse_move(Mouse *this, Screen *scn)
 	{
 		this->py = 0;
 	}
-	get_box(scn->vram, scn->xsize, this->px, this->py, this->bg, this->xsize, this->ysize);
- 	put_box(scn->vram, scn->xsize, this->px, this->py, this->cursor, this->xsize, this->ysize);
-
+	Sheet_slide(&shtCtl, sht, this->px, this->py);
 
 	return;
 }

@@ -2,10 +2,8 @@
 #include <CherryOS.h>
 
 extern struct FIFOB keyfifo, mousefifo;
-Screen screen = {
-	.sheetPtr = {0},
-	.sheet = {0}
-};
+Screen screen;
+
 Keyboard keyboard = {
 	.buf_code = {0}
 };
@@ -14,17 +12,21 @@ Mouse mouse = {
 	.buf_dcode = {0},
 	.bg = {0}
 };
+ShtCtl shtCtl = {
+	.sheets = {0},
+	.sheets0 = {0}
+};
 
 
 void CherryMain() {
 	Bootinfo *binfo = (BootinfoPtr)ADDR_BOOTINFO;
 	Memory *memory = (Memory *)ADDR_MEMBUF;
-	
+	Sheet *sheetBg, *sheetMouse;
 
 	char str[100];
 	char buf[160];
 	unsigned char data;
-	SheetPtr sheetBack, sheetMouse;
+
 
 	gdt_install();
 	idt_install();
@@ -40,44 +42,32 @@ void CherryMain() {
 	Memory_free(memory, 0x00001000, 0x0009c000);
 	Memory_free(memory, 0x00400000, memory->physize - 0x00400000);
 
-	//keyboard init
+	ShtCtl__construct(&shtCtl, binfo->vram, binfo->xsize, binfo->ysize);
+
 	Keyboard__construct(&keyboard);
 
-	//screen init
-	Screen__construct(&screen, binfo, BCOLOR);
-	screen.buf_bg = (uchar *)Memory_alloc_4k(memory, screen.xsize * screen.ysize);
-	sheetBack = Screen_alloc(&screen, screen.buf_bg, screen.xsize, screen.ysize, BCOLOR, 0xff);
-
+	uchar *buf_bg = Memory_alloc_4k(memory, (screen.xsize * screen.ysize));
+	Screen__construct(&screen, binfo, buf_bg, BCOLOR);
+	sheetBg = Sheet_alloc(&shtCtl);
+	//------------------------------------put some info---------------------------------------
 	sprintf(str, "(%d,%d)", mouse.px, mouse.py);
-	put_string(screen.buf_bg, binfo->xsize, 0, 0, str, BLACK);
-	sprintf(str, "MEMSIZE_PHY = %dMB", memory->physize / 1024 / 1024);
-	put_string(screen.buf_bg, binfo->xsize, 0, 50, str, BLACK);
-	sprintf(str, "MEMSIZE_FREE = %dMB", memory->freesize / 1024 / 1024);
-	put_string(screen.buf_bg, binfo->xsize, 0, 70, str, BLACK);
-	sprintf(str, "Address of Memory %x", memory);
-	put_string(screen.buf_bg, binfo->xsize, 0, 90, str, GREEN);
-	sprintf(str, "Address end of Memory %x", memory + 1);
-	put_string(screen.buf_bg, binfo->xsize, 0, 110, str, GREEN);
+ 	put_string(screen.buf_bg, binfo->xsize, 0, 0, str, BLACK);
+ 	sprintf(str, "MEMSIZE_PHY = %dMB", memory->physize / 1024 / 1024);
+ 	put_string(screen.buf_bg, binfo->xsize, 0, 50, str, BLACK);
+ 	sprintf(str, "MEMSIZE_FREE = %dMB", memory->freesize / 1024 / 1024);
+ 	put_string(screen.buf_bg, binfo->xsize, 0, 70, str, BLACK);
+ 	//----------------------------------------------------------------------------------------
+	Sheet_setbuf(sheetBg, screen.buf_bg, screen.xsize, screen.ysize, 0xff);
+	Sheet_slide(&shtCtl, sheetBg, 0, 0);
+	Sheet_updown(&shtCtl, sheetBg, 0);
 
-	Screen_slide(&screen, sheetBack, 0, 0);
-	Screen_height_shift(&screen, sheetBack, 0);
-
-	//mouse init
 	Mouse__construct(&mouse, binfo);
-	sheetMouse = Screen_alloc(&screen, mouse.cursor, mouse.xsize, mouse.ysize, 0, 0xff);
-	Screen_slide(&screen, sheetMouse, mouse.px, mouse.py);
-	Screen_height_shift(&screen, sheetMouse, 1);
+	sheetMouse = Sheet_alloc(&shtCtl);
+	Sheet_setbuf(sheetMouse, mouse.cursor, mouse.xsize, mouse.ysize, 0xff);
+	Sheet_slide(&shtCtl, sheetMouse, mouse.px, mouse.py);
+	Sheet_updown(&shtCtl, sheetMouse, 1);
 
-	//refresh screen
-	Screen_refresh(&screen);
-
-	
-	
-
-	//get_box(binfo->vram, binfo->xsize, mouse.px, mouse.py, mouse.bg, mouse.xsize, mouse.ysize);
- 	//put_box(binfo->vram, binfo->xsize, mouse.px, mouse.py, mouse.cursor, mouse.xsize, mouse.ysize);
-
-
+	Sheet_refresh(&shtCtl);
 
 	Mouse_enable();
 
@@ -91,22 +81,23 @@ void CherryMain() {
 			data = fifob_get(&keyfifo);
 			io_sti();
 			sprintf(str, "%x", data);
-			fill_box(binfo->vram, binfo->xsize, 0, 16, BCOLOR, 30, 16);
-			put_string(binfo->vram, binfo->xsize, 0, 16, str, BLACK);
+			fill_box(screen.buf_bg, binfo->xsize, 0, 16, BCOLOR, 30, 16);
+			put_string(screen.buf_bg, binfo->xsize, 0, 16, str, BLACK);
+			Sheet_refresh(&shtCtl);
 		}else if(fifob_status(&mousefifo) != 0){
 			data = fifob_get(&mousefifo);
 			io_sti();
 
 			if(Mouse_dcode(&mouse, data)){
 				sprintf(str, "%x, %x, %x", mouse.button, mouse.rx, mouse.ry);
-				fill_box(binfo->vram, binfo->xsize, 30, 16, BCOLOR, 120, 16);
-				put_string(binfo->vram, binfo->xsize, 30, 16, str, BLACK);
+				fill_box(screen.buf_bg, binfo->xsize, 30, 16, BCOLOR, 120, 16);
+				put_string(screen.buf_bg, binfo->xsize, 30, 16, str, BLACK);
 
 				sprintf(str, "(%d,%d)", mouse.px, mouse.py);
-				fill_box(binfo->vram, binfo->xsize, 0, 0, BCOLOR, 120, 16);
-				put_string(binfo->vram, binfo->xsize, 0, 0, str, BLACK);
+				fill_box(screen.buf_bg, binfo->xsize, 0, 0, BCOLOR, 120, 16);
+				put_string(screen.buf_bg, binfo->xsize, 0, 0, str, BLACK);
 
-				Mouse_move(&mouse, &screen);
+				Mouse_move(&mouse, &screen, sheetMouse);
 			}
 
 		}
