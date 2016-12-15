@@ -15,5 +15,6 @@ struct SHEET *sheet_alloc(struct SHTCTL *ctl);
 void Sheet_setbuf(struct SHEET *sht, unsigned char *buf, int xsize, int ysize, int col_inv);
 void Sheet_updown(struct SHTCTL *ctl, struct SHEET *sht, int height);
 void Sheet_refresh(struct SHTCTL *ctl);
+void Sheet_refreshsub(struct SHTCTL *ctl, int rfx0, int rfy0, int rfxsize, int rfysize);
 void Sheet_slide(struct SHTCTL *ctl, struct SHEET *sht, int vx0, int vy0);
 void Sheet_free(struct SHTCTL *ctl, struct SHEET *sht);

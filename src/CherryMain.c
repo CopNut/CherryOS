@@ -83,7 +83,7 @@ void CherryMain() {
 			sprintf(str, "%x", data);
 			fill_box(screen.buf_bg, binfo->xsize, 0, 16, BCOLOR, 30, 16);
 			put_string(screen.buf_bg, binfo->xsize, 0, 16, str, BLACK);
-			Sheet_refresh(&shtCtl);
+			Sheet_refreshsub(&shtCtl, 0, 16, 30, 16);
 		}else if(fifob_status(&mousefifo) != 0){
 			data = fifob_get(&mousefifo);
 			io_sti();
@@ -92,10 +92,12 @@ void CherryMain() {
 				sprintf(str, "%x, %x, %x", mouse.button, mouse.rx, mouse.ry);
 				fill_box(screen.buf_bg, binfo->xsize, 30, 16, BCOLOR, 120, 16);
 				put_string(screen.buf_bg, binfo->xsize, 30, 16, str, BLACK);
+				Sheet_refreshsub(&shtCtl, 30, 16, 120, 16);
 
 				sprintf(str, "(%d,%d)", mouse.px, mouse.py);
 				fill_box(screen.buf_bg, binfo->xsize, 0, 0, BCOLOR, 120, 16);
 				put_string(screen.buf_bg, binfo->xsize, 0, 0, str, BLACK);
+				Sheet_refreshsub(&shtCtl, 0, 0, 120, 16);
 
 				Mouse_move(&mouse, &screen, sheetMouse);
 			}

@@ -117,12 +117,71 @@ void Sheet_refresh(struct SHTCTL *ctl)
 	return;
 }
 
+void Sheet_refreshsub(struct SHTCTL *ctl, int rfx0, int rfy0, int rfxsize, int rfysize)
+{
+	int h;
+	//sheetheight
+	int shtx0, shty0, shtx1, shty1;
+	//sheet coordinate
+	int rfx1, rfy1;
+	//aim refresh area coordinate
+	int vx0, vy0, vx1, vy1, tempvx0;
+	//final refreshsub area coordinate
+	unsigned char *buf, c, *vram = ctl->vram;
+	//sheetbuf & pixel_color_buf & pointer to the vram
+	struct SHEET *sht;
+	//pointer to the present sheetheight sheet
+
+	rfx1 = rfx0 + rfxsize < ctl->xsize ? rfx0 + rfxsize : ctl->xsize - 1;
+	rfy1 = rfy0 + rfysize < ctl->ysize ? rfy0 + rfysize : ctl->ysize - 1;
+	//edge overflow fix
+
+	for (h = 0; h <= ctl->top; h++) {
+		sht = ctl->sheets[h];
+		shtx0 = sht->vx0;
+		shty0 = sht->vy0;
+		shtx1 = shtx0 + sht->bxsize - 1;
+		shty1 = shty0 + sht->bysize - 1;
+		if (rfy1 < shty0 || rfx0 > shtx1 || rfy0 > shty1 || rfx1 < shtx0)
+		{
+			continue;
+			//if the refresh area have no intersection with the sheet area, then continue to next sheetheight
+		}
+		tempvx0 = vx0 = rfx0 > shtx0 ? rfx0 : shtx0;
+		vy0 = rfy0 > shty0 ? rfy0 : shty0;
+		vx1 = rfx1 < shtx1 ? rfx1 : shtx1;
+		vy1 = rfy1 < shty1 ? rfy1 : shty1;
+		//calculate the refreshsub area
+
+		buf = sht->buf;
+		//get sheetbuf
+
+		for (int i = vy0 - shty0; vy0 <= vy1; vy0++, i++) {
+			vx0 = tempvx0;
+			for (int j = vx0 - shtx0; vx0 <= vx1; vx0++, j++) {
+				
+				c = buf[i * sht->bxsize + j];
+				//i & j are the pointers for the sheetbuf
+				if (c != sht->col_inv) {
+					vram[vy0 * ctl->xsize + vx0] = c;
+					//vy0 & vx0 are the pointers for the vram
+				}
+			}//vx loop
+		}//vy loop
+	}//height loop
+
+	return;
+}
+
 void Sheet_slide(struct SHTCTL *ctl, struct SHEET *sht, int vx0, int vy0)
 {
+	int oldvx0 = sht->vx0;
+	int oldvy0 = sht->vy0;
 	sht->vx0 = vx0;
 	sht->vy0 = vy0;
 	if (sht->height >= 0) { 
-		Sheet_refresh(ctl); 
+		Sheet_refreshsub(ctl, vx0, vy0, sht->bxsize, sht->bysize); 
+		Sheet_refreshsub(ctl, oldvx0, oldvy0, sht->bxsize, sht->bysize);
 	}
 	return;
 }
