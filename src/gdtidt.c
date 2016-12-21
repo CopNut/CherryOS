@@ -55,6 +55,7 @@ void idt_install()
     for (int i = 0; i <= LIMIT_IDT / 8; i++) {
         set_gatedesc(idt + i, 0, 0, 0);
     }
+    set_gatedesc(idt + 0x20, ((int) asm_inthandler20 - 0x280000), 2 * 8, AR_INTGATE32);
     set_gatedesc(idt + 0x21, ((int) asm_inthandler21 - 0x280000), 2 * 8, AR_INTGATE32);
     set_gatedesc(idt + 0x27, ((int) asm_inthandler27 - 0x280000), 2 * 8, AR_INTGATE32);
     set_gatedesc(idt + 0x2c, ((int) asm_inthandler2c - 0x280000), 2 * 8, AR_INTGATE32);

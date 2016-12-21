@@ -1,6 +1,4 @@
-void asm_inthandler21(void);
-void asm_inthandler27(void);
-void asm_inthandler2c(void);
+
 
 #ifndef BOOTINFO_H
 #define BOOTINFO_H 1
@@ -37,6 +35,11 @@ void asm_inthandler2c(void);
 #include <sheet.h>
 #endif
 
+#ifndef TIMER_H
+#define TIMER_H
+#include <timer.h>
+#endif
+
 
 
 /*gdt.c idt.c*/
@@ -70,6 +73,13 @@ void asm_inthandler2c(void);
 
 /*pic.c*/
 	void init_pic(void);
+
+	void asm_inthandler20(void);
+	void asm_inthandler21(void);
+	void asm_inthandler27(void);
+	void asm_inthandler2c(void);
+
+	void inthandler20(int *esp);
 	void inthandler21(int *esp);
 	void inthandler27(int *esp);
 	void inthandler2c(int *esp);

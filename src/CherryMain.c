@@ -16,6 +16,7 @@ ShtCtl shtCtl = {
 	.sheets = {0},
 	.sheets0 = {0}
 };
+Timer timer;
 
 
 void CherryMain() {
@@ -35,7 +36,10 @@ void CherryMain() {
 
 	fifob_init(&keyfifo, 32, keyboard.buf_code);
 	fifob_init(&mousefifo, 128, mouse.buf_code);
-	io_8bits_out(PIC0_IMR, 0xf9);
+
+	Timer__construct(&timer);
+
+	io_8bits_out(PIC0_IMR, 0xf8);//change from 0xf9 & 0xfe = 0xf8 ,means open the PIT 
 	io_8bits_out(PIC1_IMR, 0xef);
 
 	Memory__construct(memory, MEM_CHECK_START, MEM_CHECK_END);
@@ -74,6 +78,12 @@ void CherryMain() {
 
 	while(1)
 	{
+		sprintf(str, "%d", timer.count);
+		fill_box(screen.buf_bg, binfo->xsize, 0, 32, BCOLOR, 100, 16);
+		put_string(screen.buf_bg, binfo->xsize, 0, 32, str, BLACK);
+		Sheet_refreshsub(&shtCtl, 0, 32, 100, 16);
+
+
 		io_cli();
 		if (fifob_status(&keyfifo) + fifob_status(&mousefifo) == 0){
 			io_stihlt();

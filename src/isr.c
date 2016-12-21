@@ -1,11 +1,10 @@
 #include <stdio.h>
-#include "CherryOS.h"
+#include <CherryOS.h>
 
 #define PORT_KEYDAT		0x0060
 
 
 struct FIFOB keyfifo, mousefifo;
-
 
 
 void init_pic(void)
@@ -26,6 +25,14 @@ void init_pic(void)
 	io_8bits_out(PIC0_IMR,  0xfb  );
 	io_8bits_out(PIC1_IMR,  0xff  );
 
+	return;
+}
+
+void inthandler20(int *esp)
+//PIT timer
+{
+	io_8bits_out(PIC0_OCW2, 0x60);
+	timer.count++;
 	return;
 }
 
