@@ -16,13 +16,14 @@ ShtCtl shtCtl = {
 	.sheets = {0},
 	.sheets0 = {0}
 };
-Timer timer;
+TimerCtl timerCtl;
 
 
 void CherryMain() {
 	Bootinfo *binfo = (BootinfoPtr)ADDR_BOOTINFO;
 	Memory *memory = (Memory *)ADDR_MEMBUF;
 	Sheet *sheetBg, *sheetMouse;
+	TimerPtr timerPtr;
 
 	char str[100];
 	char buf[160];
@@ -37,7 +38,13 @@ void CherryMain() {
 	fifob_init(&keyfifo, 32, keyboard.buf_code);
 	fifob_init(&mousefifo, 128, mouse.buf_code);
 
-	Timer__construct(&timer);
+	Timer__construct(&timerCtl);
+
+
+
+	timerPtr = Timer_set_timeout(&timerCtl, 1);
+
+
 
 	io_8bits_out(PIC0_IMR, 0xf8);//change from 0xf9 & 0xfe = 0xf8 ,means open the PIT 
 	io_8bits_out(PIC1_IMR, 0xef);
@@ -60,6 +67,20 @@ void CherryMain() {
  	put_string(screen.buf_bg, binfo->xsize, 0, 50, str, BLACK);
  	sprintf(str, "MEMSIZE_FREE = %dMB", memory->freesize / 1024 / 1024);
  	put_string(screen.buf_bg, binfo->xsize, 0, 70, str, BLACK);
+
+ 	/****************************************/
+	sprintf(str, "addr end %x", &(timerCtl.timers));
+	fill_box(screen.buf_bg, binfo->xsize, 0, 100, BCOLOR, 100, 16);
+	put_string(screen.buf_bg, binfo->xsize, 0, 100, str, BLACK);
+	Sheet_refreshsub(&shtCtl, 0, 100, 100, 16);
+	/****************************************/
+
+	/****************************************/
+	sprintf(str, "addr start next %x", timerPtr);
+	fill_box(screen.buf_bg, binfo->xsize, 0, 120, BCOLOR, 100, 16);
+	put_string(screen.buf_bg, binfo->xsize, 0, 120, str, BLACK);
+	Sheet_refreshsub(&shtCtl, 0, 120, 100, 16);
+	/****************************************/
  	//----------------------------------------------------------------------------------------
 	Sheet_setbuf(sheetBg, screen.buf_bg, screen.xsize, screen.ysize, 0xff);
 	Sheet_slide(&shtCtl, sheetBg, 0, 0);
@@ -78,10 +99,12 @@ void CherryMain() {
 
 	while(1)
 	{
-		sprintf(str, "%d", timer.count);
+		sprintf(str, "%d", timerCtl.count);
 		fill_box(screen.buf_bg, binfo->xsize, 0, 32, BCOLOR, 100, 16);
 		put_string(screen.buf_bg, binfo->xsize, 0, 32, str, BLACK);
 		Sheet_refreshsub(&shtCtl, 0, 32, 100, 16);
+
+
 
 
 		io_cli();

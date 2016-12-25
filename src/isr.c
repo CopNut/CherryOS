@@ -32,7 +32,7 @@ void inthandler20(int *esp)
 //PIT timer
 {
 	io_8bits_out(PIC0_OCW2, 0x60);
-	timer.count++;
+	timerCtl.count++;
 	return;
 }
 
