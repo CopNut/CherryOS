@@ -24,6 +24,7 @@ void Timer__construct(TimerCtlPtr this)
 	this->end.timeout = 0xffffffff;
 	this->end.flag = FLAG_TIMER_USING;
 	this->end.next = NULL;
+	this->next = &(this->end);
 	return;
 }
 
@@ -35,8 +36,18 @@ TimerPtr Timer_set_timeout(TimerCtlPtr this, uint timeout){
 
 	e = io_load_eflags();
 	io_cli();
-	while(timerTab[i].flag){
-		i++;
+
+	for (uint i = 0; i < SIZE_TIMERS; i++)
+	{
+		if (timerTab[i].flag == FLAG_TIMER_FREE)
+		{
+			break;
+		}
+	}
+	if (i == SIZE_TIMERS)
+	{
+		return NULL;
+		//no more timers avilable
 	}
 	new = &timerTab[i];
 	new->flag = FLAG_TIMER_USING;
@@ -52,6 +63,21 @@ TimerPtr Timer_set_timeout(TimerCtlPtr this, uint timeout){
 	//p => new => q
 	p->next = new;
 	new->next = q;
+
+	//timerCtl->next
+	if (new->timeout > this->count && new->timeout < this->next->timeout)
+	{
+		this->next = new;
+	}
 	io_store_eflags(e);
 	return new;
+}
+
+void Timer_timeout(TimerCtlPtr this)
+{
+	TimerPtr timeoutedPtr = this->next;
+	timeoutedPtr->flag = FLAG_TIMER_ALLOC;
+	this->next = timeoutedPtr->next;
+	
+	return;
 }

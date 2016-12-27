@@ -12,9 +12,11 @@ typedef struct Timer{
 
 typedef struct TimerCtl{
 	uint count;
+	uchar buf_timeout[8];
 	Timer start;
 	Timer timers[SIZE_TIMERS];
 	Timer end;
+	TimerPtr next;
 }TimerCtl, *TimerCtlPtr;
 
 
@@ -22,3 +24,4 @@ extern TimerCtl timerCtl;
 
 void Timer__construct(TimerCtlPtr this);
 TimerPtr Timer_set_timeout(TimerCtlPtr this, uint timeout);
+void Timer_timeout(TimerCtlPtr this);

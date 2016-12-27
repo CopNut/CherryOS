@@ -5,6 +5,7 @@
 
 
 struct FIFOB keyfifo, mousefifo;
+struct FIFOB timerfifo;
 
 
 void init_pic(void)
@@ -31,8 +32,14 @@ void init_pic(void)
 void inthandler20(int *esp)
 //PIT timer
 {
+	uint timeout = timerCtl.next->timeout;
 	io_8bits_out(PIC0_OCW2, 0x60);
 	timerCtl.count++;
+	if (timerCtl.count >= timeout)
+	{
+		fifob_put(&timerfifo, timeout);
+		Timer_timeout(&timerCtl);
+	}
 	return;
 }
 

@@ -100,12 +100,13 @@
 
 
 /*fifo.c*/
-	struct FIFOB {
-		unsigned char *buf;
-		int wp, rp, size, free, flags;
-	};
 
-	void fifob_init(struct FIFOB *fifo, int size, unsigned char *buf);
-	int fifob_put(struct FIFOB *fifo, unsigned char data);
-	int fifob_get(struct FIFOB *fifo);
-	int fifob_status(struct FIFOB *fifo);
+	typedef struct FIFO32 {
+		uint *buf;
+		int wp, rp, size, free, flags;
+	}FIFO32, *FIFO32Ptr;
+
+	void FIFO32__construct(struct FIFO32 *fifo, int size, unsigned char *buf);
+	int FIFO32_put(struct FIFO32 *fifo, unsigned char data);
+	int FIFO32_get(struct FIFO32 *fifo);
+	int FIFO32_status(struct FIFO32 *fifo);

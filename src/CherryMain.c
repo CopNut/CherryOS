@@ -2,6 +2,9 @@
 #include <CherryOS.h>
 
 extern struct FIFOB keyfifo, mousefifo;
+extern struct FIFOB timerfifo;
+FIFO32 fifo32;
+
 Screen screen;
 
 Keyboard keyboard = {
@@ -37,12 +40,10 @@ void CherryMain() {
 
 	fifob_init(&keyfifo, 32, keyboard.buf_code);
 	fifob_init(&mousefifo, 128, mouse.buf_code);
+	fifob_init(&timerfifo, 8, timerCtl.buf_timeout);
 
 	Timer__construct(&timerCtl);
-
-
-
-	timerPtr = Timer_set_timeout(&timerCtl, 1);
+	timerPtr = Timer_set_timeout(&timerCtl, 100);
 
 
 
@@ -108,7 +109,7 @@ void CherryMain() {
 
 
 		io_cli();
-		if (fifob_status(&keyfifo) + fifob_status(&mousefifo) == 0){
+		if (fifob_status(&keyfifo) + fifob_status(&mousefifo) + fifob_status(&timerfifo) == 0){
 			io_stihlt();
 		}else if(fifob_status(&keyfifo) != 0){
 			data = fifob_get(&keyfifo);
@@ -135,6 +136,15 @@ void CherryMain() {
 				Mouse_move(&mouse, &screen, sheetMouse);
 			}
 
+		}
+		else if (fifob_status(&timerfifo) != 0) {
+			data = fifob_get(&timerfifo);
+			io_sti();
+
+			sprintf(str, "%d timeout", data);
+			fill_box(screen.buf_bg, binfo->xsize, 0, 180, BCOLOR, 100, 16);
+			put_string(screen.buf_bg, binfo->xsize, 0, 180, str, BLACK);
+			Sheet_refreshsub(&shtCtl, 0, 180, 100, 16);
 		}
 		
 	}

@@ -1,9 +1,9 @@
 #include <stdio.h>
-#include "CherryOS.h"
+#include <CherryOS.h>
 
 #define FLAGS_OVERFLOW 0x0001
 
-void fifob_init(struct FIFOB *fifo, int size, unsigned char *buf)
+void FIFO32__construct(struct FIFO32 *fifo, int size, uint *buf)
 {
 	fifo->buf = buf;
 	fifo->wp = 0;
@@ -14,7 +14,7 @@ void fifob_init(struct FIFOB *fifo, int size, unsigned char *buf)
 	return;
 }
 
-int fifob_put(struct FIFOB *fifo, unsigned char data)
+int FIFO32_put(struct FIFO32 *fifo, uint data)
 {
 	if (fifo->free == 0){
 		fifo->flags |= FLAGS_OVERFLOW;
@@ -27,7 +27,7 @@ int fifob_put(struct FIFOB *fifo, unsigned char data)
 	return 0;
 }
 
-int fifob_get(struct FIFOB *fifo)
+int FIFO32_get(struct FIFO32 *fifo)
 {
 	int data;
 	if (fifo->free == fifo->size){
@@ -40,7 +40,7 @@ int fifob_get(struct FIFOB *fifo)
 	return data;
 }
 
-int fifob_status(struct FIFOB *fifo)
+int FIFO32_status(struct FIFO32 *fifo)
 {
 	return fifo->size - fifo->free;
 }
