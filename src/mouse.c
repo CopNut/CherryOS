@@ -1,10 +1,14 @@
 #include <stdio.h>
-#include <bootinfo.h>
-#include <mouse.h>
+#include <CherryOS.h>
 
 extern ShtCtl shtCtl;
+extern Bootinfo *binfo;
+FIFO32Ptr mousefifo;
+uint data_shift_mouse;
 
-void Mouse__construct(Mouse *this, Bootinfo *binfo) {
+void Mouse__construct(Mouse *this, FIFO32Ptr fifo, uint shift) {
+	mousefifo = fifo;
+	data_shift_mouse = shift;
 	this->phase = 0;
 	this->xsize = MOUSE_XSIZE;
 	this->ysize = MOUSE_YSIZE;

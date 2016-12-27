@@ -4,8 +4,8 @@
 #define PORT_KEYDAT		0x0060
 
 
-struct FIFOB keyfifo, mousefifo;
-struct FIFOB timerfifo;
+extern FIFO32Ptr keyfifo, mousefifo, timerfifo;
+extern uint data_shift_key, data_shift_mouse, data_shift_timer;
 
 
 void init_pic(void)
@@ -37,7 +37,7 @@ void inthandler20(int *esp)
 	timerCtl.count++;
 	if (timerCtl.count >= timeout)
 	{
-		fifob_put(&timerfifo, timeout);
+		FIFO32_put(timerfifo, timeout + data_shift_timer);
 		Timer_timeout(&timerCtl);
 	}
 	return;
@@ -49,7 +49,7 @@ void inthandler21(int *esp)
 	unsigned char data;
 	io_8bits_out(PIC0_OCW2, 0x61); /*CPU interrupt acknowledged*/
 	data = io_8bits_in(PORT_KEYDAT); /*catch the keyboard data*/
-	fifob_put(&keyfifo, data);
+	FIFO32_put(keyfifo, data + data_shift_key);
 	
 	return;
 }
@@ -61,7 +61,7 @@ void inthandler2c(int *esp)
 	io_8bits_out(PIC1_OCW2, 0x64);
 	io_8bits_out(PIC0_OCW2, 0x62);
 	data = io_8bits_in(PORT_KEYDAT);
-	fifob_put(&mousefifo, data);
+	FIFO32_put(mousefifo, data + data_shift_mouse);
 	return;
 }
 

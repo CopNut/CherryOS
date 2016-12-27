@@ -4,11 +4,16 @@
 #define PIT_CTRL 0x0043
 #define PIT_CNT0 0x0040
 
-void Timer__construct(TimerCtlPtr this)
+FIFO32Ptr timerfifo;
+uint data_shift_timer;
+
+void Timer__construct(TimerCtlPtr this, FIFO32Ptr fifo, uint shift)
 {
 	uint i;
 	TimerPtr timerPtr;
 
+	timerfifo = fifo;
+	data_shift_timer = shift;
 	io_8bits_out(PIT_CTRL, 0x34);
 	io_8bits_out(PIT_CNT0, 0x9c);
 	io_8bits_out(PIT_CNT0, 0x2e);

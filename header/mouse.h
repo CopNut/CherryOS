@@ -1,3 +1,8 @@
+#ifndef FIFO_H
+#define FIFO_H
+#include <fifo.h>
+#endif
+
 #ifndef SHEET_H
 #define SHEET_H 1
 #include <sheet.h>
@@ -10,7 +15,7 @@
 
 //----------object mouse----------
 typedef struct Mouse {
-	unsigned char buf_code[128], buf_dcode[3], phase;
+	uint  buf_dcode[3], phase;
 	unsigned char xsize, ysize;
 	unsigned short px, py;
 	char rx, ry;
@@ -20,7 +25,7 @@ typedef struct Mouse {
 }Mouse, *MousePtr;
 
 //mousebuf[128],decodebuf[3],cursor[160]
-void Mouse__construct(Mouse *this, Bootinfo *binfo);
+void Mouse__construct(Mouse *this, FIFO32Ptr fifo, uint shift);
 
 //
 void Mouse_enable(void);

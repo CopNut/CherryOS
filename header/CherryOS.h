@@ -6,6 +6,12 @@
 #endif
 
 
+#ifndef FIFO_H
+#define FIFO_H
+#include <fifo.h>
+#endif
+
+
 #ifndef SCREEN_H
 #define SCREEN_H 1
 #include <screen.h>
@@ -96,17 +102,3 @@
 	#define PIC1_ICW2		0x00a1
 	#define PIC1_ICW3		0x00a1
 	#define PIC1_ICW4		0x00a1
-
-
-
-/*fifo.c*/
-
-	typedef struct FIFO32 {
-		uint *buf;
-		int wp, rp, size, free, flags;
-	}FIFO32, *FIFO32Ptr;
-
-	void FIFO32__construct(struct FIFO32 *fifo, int size, unsigned char *buf);
-	int FIFO32_put(struct FIFO32 *fifo, unsigned char data);
-	int FIFO32_get(struct FIFO32 *fifo);
-	int FIFO32_status(struct FIFO32 *fifo);

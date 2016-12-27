@@ -1,3 +1,8 @@
+#ifndef FIFO_H
+#define FIFO_H
+#include <fifo.h>
+#endif
+
 #define SIZE_TIMERS 512
 
 #define FLAG_TIMER_FREE 	0x0000
@@ -12,7 +17,6 @@ typedef struct Timer{
 
 typedef struct TimerCtl{
 	uint count;
-	uchar buf_timeout[8];
 	Timer start;
 	Timer timers[SIZE_TIMERS];
 	Timer end;
@@ -22,6 +26,6 @@ typedef struct TimerCtl{
 
 extern TimerCtl timerCtl;
 
-void Timer__construct(TimerCtlPtr this);
+void Timer__construct(TimerCtlPtr this, FIFO32Ptr fifo, uint shift);
 TimerPtr Timer_set_timeout(TimerCtlPtr this, uint timeout);
 void Timer_timeout(TimerCtlPtr this);

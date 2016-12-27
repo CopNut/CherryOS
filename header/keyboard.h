@@ -1,10 +1,15 @@
+#ifndef FIFO_H
+#define FIFO_H
+#include <fifo.h>
+#endif
+
 //----------object keyboard----------
 typedef struct Keyboard {
-	unsigned char buf_code[32];
+	uint flag;
 }Keyboard, *KeyboardPtr;
 
 //
-void Keyboard__construct(Keyboard *this);
+void Keyboard__construct(Keyboard *this, FIFO32Ptr fifo, uint shift);
 
 //wait sendready
 void Keyboard_wait_KBC_sendready(void);

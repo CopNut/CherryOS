@@ -1,51 +1,44 @@
 #include <stdio.h>
 #include <CherryOS.h>
 
-extern struct FIFOB keyfifo, mousefifo;
-extern struct FIFOB timerfifo;
+BootinfoPtr binfo;
+
 FIFO32 fifo32;
+extern uint data_shift_mouse, data_shift_key, data_shift_timer;
+
+MemoryPtr memory;
 
 Screen screen;
 
-Keyboard keyboard = {
-	.buf_code = {0}
-};
-Mouse mouse = {
-	.buf_code = {0},
-	.buf_dcode = {0},
-	.bg = {0}
-};
-ShtCtl shtCtl = {
-	.sheets = {0},
-	.sheets0 = {0}
-};
+Keyboard keyboard;
+
+Mouse mouse;
+
+ShtCtl shtCtl;
+
 TimerCtl timerCtl;
 
 
 void CherryMain() {
-	Bootinfo *binfo = (BootinfoPtr)ADDR_BOOTINFO;
-	Memory *memory = (Memory *)ADDR_MEMBUF;
-	Sheet *sheetBg, *sheetMouse;
+	binfo = (BootinfoPtr)ADDR_BOOTINFO;
+	memory = (MemoryPtr)ADDR_MEMBUF;
+	SheetPtr sheetBg, sheetMouse;
 	TimerPtr timerPtr;
 
 	char str[100];
 	char buf[160];
-	unsigned char data;
-
+	uint buf_fifo32[128];
+	uint data;
 
 	gdt_install();
 	idt_install();
 	init_pic();
 	io_sti();
 
-	fifob_init(&keyfifo, 32, keyboard.buf_code);
-	fifob_init(&mousefifo, 128, mouse.buf_code);
-	fifob_init(&timerfifo, 8, timerCtl.buf_timeout);
+	FIFO32__construct(&fifo32, 128, buf_fifo32);
 
-	Timer__construct(&timerCtl);
+	Timer__construct(&timerCtl, &fifo32, 512);
 	timerPtr = Timer_set_timeout(&timerCtl, 100);
-
-
 
 	io_8bits_out(PIC0_IMR, 0xf8);//change from 0xf9 & 0xfe = 0xf8 ,means open the PIT 
 	io_8bits_out(PIC1_IMR, 0xef);
@@ -56,7 +49,7 @@ void CherryMain() {
 
 	ShtCtl__construct(&shtCtl, binfo->vram, binfo->xsize, binfo->ysize);
 
-	Keyboard__construct(&keyboard);
+	Keyboard__construct(&keyboard, &fifo32, 0);
 
 	uchar *buf_bg = Memory_alloc_4k(memory, (screen.xsize * screen.ysize));
 	Screen__construct(&screen, binfo, buf_bg, BCOLOR);
@@ -68,26 +61,12 @@ void CherryMain() {
  	put_string(screen.buf_bg, binfo->xsize, 0, 50, str, BLACK);
  	sprintf(str, "MEMSIZE_FREE = %dMB", memory->freesize / 1024 / 1024);
  	put_string(screen.buf_bg, binfo->xsize, 0, 70, str, BLACK);
-
- 	/****************************************/
-	sprintf(str, "addr end %x", &(timerCtl.timers));
-	fill_box(screen.buf_bg, binfo->xsize, 0, 100, BCOLOR, 100, 16);
-	put_string(screen.buf_bg, binfo->xsize, 0, 100, str, BLACK);
-	Sheet_refreshsub(&shtCtl, 0, 100, 100, 16);
-	/****************************************/
-
-	/****************************************/
-	sprintf(str, "addr start next %x", timerPtr);
-	fill_box(screen.buf_bg, binfo->xsize, 0, 120, BCOLOR, 100, 16);
-	put_string(screen.buf_bg, binfo->xsize, 0, 120, str, BLACK);
-	Sheet_refreshsub(&shtCtl, 0, 120, 100, 16);
-	/****************************************/
  	//----------------------------------------------------------------------------------------
 	Sheet_setbuf(sheetBg, screen.buf_bg, screen.xsize, screen.ysize, 0xff);
 	Sheet_slide(&shtCtl, sheetBg, 0, 0);
 	Sheet_updown(&shtCtl, sheetBg, 0);
 
-	Mouse__construct(&mouse, binfo);
+	Mouse__construct(&mouse, &fifo32, 256);
 	sheetMouse = Sheet_alloc(&shtCtl);
 	Sheet_setbuf(sheetMouse, mouse.cursor, mouse.xsize, mouse.ysize, 0xff);
 	Sheet_slide(&shtCtl, sheetMouse, mouse.px, mouse.py);
@@ -97,7 +76,6 @@ void CherryMain() {
 
 	Mouse_enable();
 
-
 	while(1)
 	{
 		sprintf(str, "%d", timerCtl.count);
@@ -105,48 +83,41 @@ void CherryMain() {
 		put_string(screen.buf_bg, binfo->xsize, 0, 32, str, BLACK);
 		Sheet_refreshsub(&shtCtl, 0, 32, 100, 16);
 
-
-
-
 		io_cli();
-		if (fifob_status(&keyfifo) + fifob_status(&mousefifo) + fifob_status(&timerfifo) == 0){
+		if (FIFO32_status(&fifo32) == 0){
 			io_stihlt();
-		}else if(fifob_status(&keyfifo) != 0){
-			data = fifob_get(&keyfifo);
+		}else{
+			data = FIFO32_get(&fifo32);
 			io_sti();
-			sprintf(str, "%x", data);
-			fill_box(screen.buf_bg, binfo->xsize, 0, 16, BCOLOR, 30, 16);
-			put_string(screen.buf_bg, binfo->xsize, 0, 16, str, BLACK);
-			Sheet_refreshsub(&shtCtl, 0, 16, 30, 16);
-		}else if(fifob_status(&mousefifo) != 0){
-			data = fifob_get(&mousefifo);
-			io_sti();
+			if (FIFO_KEY_START <= data && data <= FIFO_KEY_END){
+				//data from keydoard
+				sprintf(str, "%x", data - data_shift_key);
+				fill_box(screen.buf_bg, binfo->xsize, 0, 16, BCOLOR, 30, 16);
+				put_string(screen.buf_bg, binfo->xsize, 0, 16, str, BLACK);
+				Sheet_refreshsub(&shtCtl, 0, 16, 30, 16);
+			}else if (FIFO_MOUSE_START <= data && data <= FIFO_MOUSE_END){
+				//data from mouse
+				if(Mouse_dcode(&mouse, data - data_shift_mouse)){
+					sprintf(str, "%x, %x, %x", mouse.button, mouse.rx, mouse.ry);
+					fill_box(screen.buf_bg, binfo->xsize, 30, 16, BCOLOR, 120, 16);
+					put_string(screen.buf_bg, binfo->xsize, 30, 16, str, BLACK);
+					Sheet_refreshsub(&shtCtl, 30, 16, 120, 16);
 
-			if(Mouse_dcode(&mouse, data)){
-				sprintf(str, "%x, %x, %x", mouse.button, mouse.rx, mouse.ry);
-				fill_box(screen.buf_bg, binfo->xsize, 30, 16, BCOLOR, 120, 16);
-				put_string(screen.buf_bg, binfo->xsize, 30, 16, str, BLACK);
-				Sheet_refreshsub(&shtCtl, 30, 16, 120, 16);
+					sprintf(str, "(%d,%d)", mouse.px, mouse.py);
+					fill_box(screen.buf_bg, binfo->xsize, 0, 0, BCOLOR, 120, 16);
+					put_string(screen.buf_bg, binfo->xsize, 0, 0, str, BLACK);
+					Sheet_refreshsub(&shtCtl, 0, 0, 120, 16);
 
-				sprintf(str, "(%d,%d)", mouse.px, mouse.py);
-				fill_box(screen.buf_bg, binfo->xsize, 0, 0, BCOLOR, 120, 16);
-				put_string(screen.buf_bg, binfo->xsize, 0, 0, str, BLACK);
-				Sheet_refreshsub(&shtCtl, 0, 0, 120, 16);
-
-				Mouse_move(&mouse, &screen, sheetMouse);
+					Mouse_move(&mouse, &screen, sheetMouse);
+				}
+			}else{
+				//data from timer
+				sprintf(str, "%d timeout", data - data_shift_timer);
+				fill_box(screen.buf_bg, binfo->xsize, 0, 180, BCOLOR, 100, 16);
+				put_string(screen.buf_bg, binfo->xsize, 0, 180, str, BLACK);
+				Sheet_refreshsub(&shtCtl, 0, 180, 100, 16);
 			}
-
 		}
-		else if (fifob_status(&timerfifo) != 0) {
-			data = fifob_get(&timerfifo);
-			io_sti();
-
-			sprintf(str, "%d timeout", data);
-			fill_box(screen.buf_bg, binfo->xsize, 0, 180, BCOLOR, 100, 16);
-			put_string(screen.buf_bg, binfo->xsize, 0, 180, str, BLACK);
-			Sheet_refreshsub(&shtCtl, 0, 180, 100, 16);
-		}
-		
 	}
 }
 

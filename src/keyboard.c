@@ -1,8 +1,13 @@
 #include <stdio.h>
 #include <keyboard.h>
 
-void Keyboard__construct(Keyboard *this)
+FIFO32Ptr keyfifo;
+uint data_shift_key;
+
+void Keyboard__construct(Keyboard *this, FIFO32Ptr fifo, uint shift)
 {
+	keyfifo = fifo;
+	data_shift_key = shift;
 	Keyboard_wait_KBC_sendready();
 	io_8bits_out(PORT_KEYCMD, KEYCMD_WRITE_MODE);
 	Keyboard_wait_KBC_sendready();
