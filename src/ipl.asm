@@ -2,7 +2,6 @@
 ;C0H0S1(所加载的第一个扇区)从0x7c00加载至0x90000处
 BOOTSEG        EQU 0x07c0
 INITSEG        EQU 0x9000 ;a safe place
-ASMHEADLEN     EQU 0x0011
 CYLS           EQU 10
 ;org     07c00h
 
@@ -88,20 +87,6 @@ next:
 
                 ;MOV             byte [0x0030],CH             ; IPLがどこまで読んだのかをメモ
                 JMP             word 0x1000:0x0200
-
-
-;load_asmHead:
-;        mov     dx, 0000h                       ;0号磁头,0号驱动器（软盘）
-;        mov     cx, 0002h                       ;0号磁道,2号扇区（**第二扇区，第一个扇区编号是1，不是0**）
-;        mov     bx, 0200h                       ;本例中es = 9000h,bx = 0200h,romAddress = 90200h
-;        mov     ax, 0200h+ASMHEADLEN            ;2号读扇区功能,读入17个扇区,a200h + 2200h - 1 = c3ffh,a200h~c3ffh
-;        int     13h
-;        jnc     asmHead
-;        mov     dx, 0000h
-;        mov     ax, 0000h
-;        int     13h
-;        ;jmp     load_asmHead
-;        jmp     error
 
 lop:       
         hlt 

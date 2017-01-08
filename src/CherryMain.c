@@ -14,7 +14,7 @@ Keyboard keyboard;
 
 Mouse mouse;
 
-ShtCtl shtCtl;
+ShtCtlPtr ctl;
 
 TimerCtl timerCtl;
 
@@ -47,13 +47,13 @@ void CherryMain() {
 	Memory_free(memory, 0x00001000, 0x0009c000);
 	Memory_free(memory, 0x00400000, memory->physize - 0x00400000);
 
-	ShtCtl__construct(&shtCtl, binfo->vram, binfo->xsize, binfo->ysize);
+	ctl = ShtCtl__construct(binfo->vram, binfo->xsize, binfo->ysize, memory);
 
 	Keyboard__construct(&keyboard, &fifo32, 0);
 
-	uchar *buf_bg = Memory_alloc_4k(memory, (screen.xsize * screen.ysize));
+	uchar *buf_bg = (uchar *)Memory_alloc_4k(memory, (screen.xsize * screen.ysize));
 	Screen__construct(&screen, binfo, buf_bg, BCOLOR);
-	sheetBg = Sheet_alloc(&shtCtl);
+	sheetBg = Sheet_alloc();
 	//------------------------------------put some info---------------------------------------
 	sprintf(str, "(%d,%d)", mouse.px, mouse.py);
  	put_string(screen.buf_bg, binfo->xsize, 0, 0, str, BLACK);
@@ -63,25 +63,23 @@ void CherryMain() {
  	put_string(screen.buf_bg, binfo->xsize, 0, 70, str, BLACK);
  	//----------------------------------------------------------------------------------------
 	Sheet_setbuf(sheetBg, screen.buf_bg, screen.xsize, screen.ysize, 0xff);
-	Sheet_slide(&shtCtl, sheetBg, 0, 0);
-	Sheet_updown(&shtCtl, sheetBg, 0);
+	Sheet_slide(sheetBg, 0, 0);
+	Sheet_updown(sheetBg, 0);
 
 	Mouse__construct(&mouse, &fifo32, 256);
-	sheetMouse = Sheet_alloc(&shtCtl);
+	sheetMouse = Sheet_alloc();
 	Sheet_setbuf(sheetMouse, mouse.cursor, mouse.xsize, mouse.ysize, 0xff);
-	Sheet_slide(&shtCtl, sheetMouse, mouse.px, mouse.py);
-	Sheet_updown(&shtCtl, sheetMouse, 1);
+	Sheet_slide(sheetMouse, mouse.px, mouse.py);
+	Sheet_updown(sheetMouse, 1);
 
-	Sheet_refresh(&shtCtl);
+	Sheet_refresh();
 
 	Mouse_enable();
 
 	while(1)
 	{
 		sprintf(str, "%d", timerCtl.count);
-		fill_box(screen.buf_bg, binfo->xsize, 0, 32, BCOLOR, 100, 16);
-		put_string(screen.buf_bg, binfo->xsize, 0, 32, str, BLACK);
-		Sheet_refreshsub(&shtCtl, 0, 32, 100, 16);
+		Sheet_put_string(sheetBg, str, 0, 32, BCOLOR, BLACK);
 
 		io_cli();
 		if (FIFO32_status(&fifo32) == 0){
@@ -92,30 +90,22 @@ void CherryMain() {
 			if (FIFO_KEY_START <= data && data <= FIFO_KEY_END){
 				//data from keydoard
 				sprintf(str, "%x", data - data_shift_key);
-				fill_box(screen.buf_bg, binfo->xsize, 0, 16, BCOLOR, 30, 16);
-				put_string(screen.buf_bg, binfo->xsize, 0, 16, str, BLACK);
-				Sheet_refreshsub(&shtCtl, 0, 16, 30, 16);
+				Sheet_put_string(sheetBg, str, 0, 16, BCOLOR, BLACK);
 			}else if (FIFO_MOUSE_START <= data && data <= FIFO_MOUSE_END){
 				//data from mouse
 				if(Mouse_dcode(&mouse, data - data_shift_mouse)){
 					sprintf(str, "%x, %x, %x", mouse.button, mouse.rx, mouse.ry);
-					fill_box(screen.buf_bg, binfo->xsize, 30, 16, BCOLOR, 120, 16);
-					put_string(screen.buf_bg, binfo->xsize, 30, 16, str, BLACK);
-					Sheet_refreshsub(&shtCtl, 30, 16, 120, 16);
+					Sheet_put_string(sheetBg, str, 30, 16, BCOLOR, BLACK);
 
 					sprintf(str, "(%d,%d)", mouse.px, mouse.py);
-					fill_box(screen.buf_bg, binfo->xsize, 0, 0, BCOLOR, 120, 16);
-					put_string(screen.buf_bg, binfo->xsize, 0, 0, str, BLACK);
-					Sheet_refreshsub(&shtCtl, 0, 0, 120, 16);
+					Sheet_put_string(sheetBg, str, 0, 0, BCOLOR, BLACK);
 
 					Mouse_move(&mouse, &screen, sheetMouse);
 				}
 			}else{
 				//data from timer
 				sprintf(str, "%d timeout", data - data_shift_timer);
-				fill_box(screen.buf_bg, binfo->xsize, 0, 180, BCOLOR, 100, 16);
-				put_string(screen.buf_bg, binfo->xsize, 0, 180, str, BLACK);
-				Sheet_refreshsub(&shtCtl, 0, 180, 100, 16);
+				Sheet_put_string(sheetBg, str, 0, 180, BCOLOR, BLACK);
 			}
 		}
 	}

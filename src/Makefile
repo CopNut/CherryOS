@@ -58,11 +58,14 @@ CherryOS.img : CherryOS.tmp Makefile
 img :
 	$(MAKE) CherryOS.img
 
-run :
+vb:
 	$(MAKE) img
 	$(COPY) CherryOS.img ..\link\CherryOS.img
 	C:\Program Files\Oracle\VirtualBox\VBoxManage.exe startvm CherryOS
-#	$(MAKE) -C ..\tools\qemu
+vm:
+	$(MAKE) img
+	$(COPY) CherryOS.img ..\link\CherryOS.img
+	"C:\Program Files (x86)\VMware\VMware Workstation\vmrun" -T ws start "D:\My Documents\Virtual Machines\CherryOS\CherryOS.vmx"
 
 clean :
 	-$(DEL) *.bin

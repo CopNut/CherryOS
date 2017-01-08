@@ -123,7 +123,7 @@ void Mouse_move(Mouse *this, Screen *scn, Sheet *sht)
 	{
 		this->py = 0;
 	}
-	Sheet_slide(&shtCtl, sht, this->px, this->py);
+	Sheet_slide(sht, this->px, this->py);
 
 	return;
 }
