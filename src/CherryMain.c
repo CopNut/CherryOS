@@ -9,6 +9,7 @@ extern uint data_shift_mouse, data_shift_key, data_shift_timer;
 MemoryPtr memory;
 
 Screen screen;
+Fontinfo fontinfo;
 
 Keyboard keyboard;
 
@@ -22,7 +23,7 @@ TimerCtl timerCtl;
 void CherryMain() {
 	binfo = (BootinfoPtr)ADDR_BOOTINFO;
 	memory = (MemoryPtr)ADDR_MEMBUF;
-	SheetPtr sheetBg, sheetMouse;
+	SheetPtr sheetBg, sheetMouse, sheetWindow;
 	TimerPtr timerPtr;
 
 	char str[100];
@@ -51,6 +52,8 @@ void CherryMain() {
 
 	Keyboard__construct(&keyboard, &fifo32, 0);
 
+	Font__construct(FONT_HEIGHT, FONT_WIDTH, FONT_MARGIN_VERTICAL, FONT_MARGIN_PARALELL, BLACK);
+
 	uchar *buf_bg = (uchar *)Memory_alloc_4k(memory, (screen.xsize * screen.ysize));
 	Screen__construct(&screen, binfo, buf_bg, BCOLOR);
 	sheetBg = Sheet_alloc();
@@ -72,7 +75,7 @@ void CherryMain() {
 	Sheet_slide(sheetMouse, mouse.px, mouse.py);
 	Sheet_updown(sheetMouse, 1);
 
-	Sheet_refresh();
+	// Sheet_refresh();
 
 	Mouse_enable();
 
@@ -106,6 +109,9 @@ void CherryMain() {
 				//data from timer
 				sprintf(str, "%d timeout", data - data_shift_timer);
 				Sheet_put_string(sheetBg, str, 0, 180, BCOLOR, BLACK);
+
+				sprintf(str, "-ff = %d", atoi_hex("-ff"));
+				Sheet_put_string(sheetBg, str, 120, 180, BCOLOR, BLACK);
 			}
 		}
 	}

@@ -1,4 +1,4 @@
-#include "stdio.h"
+#include <stdio.h>
 
 size_t strlen(const char *str){
 
@@ -93,6 +93,17 @@ size_t sprintf(char* buffer,const char* format,...)
         {
             switch(format[index+1])
             {
+                case '1':
+                case '2':
+                case '3':
+                case '4':
+                case '5':
+                case '6':
+                case '7':
+                case '8':
+                case '9':
+
+
                 case 'd':
                     temp=va_arg(arg_ptr,int);
                     buffer=buffer+write_dec(buffer,temp);
@@ -175,4 +186,90 @@ unsigned int write_hex(char* buffer,int value){
     return _temp;
 }
 
+int atoi_dec(const uchar *string){
 
+    int x = 0;
+    int sign;
+    uchar *p;
+
+    if (string[0] == '-')
+    {
+        sign = -1;
+        p = string + 1;
+    }
+    else if (string[0] == '+')
+    {
+        sign = 1;
+        p = string + 1;
+    }
+    else
+    {
+        sign = 1;
+        p = string;
+    }
+
+    for (; p[0] != 0; ++p)
+    {
+        //debug
+        if(p[0] < '0' || p[0] > '9'){
+            //invalide input
+            return -1;
+        }
+        //debug
+        
+        x *= 10;
+        x += p[0] - '0';
+    }
+
+    return sign * x;
+}
+
+int atoi_hex(const uchar *string){
+
+    int x = 0;
+    int sign;
+    uchar *p;
+
+    if (string[0] == '-')
+    {
+        sign = -1;
+        p = string + 1;
+    }
+    else if (string[0] == '+')
+    {
+        sign = 1;
+        p = string + 1;
+    }
+    else
+    {
+        sign = 1;
+        p = string;
+    }
+
+    for (; p[0] != 0; ++p)
+    {
+        
+        if (p[0] >= '0' && p[0] <= '9')
+        {
+            x <<= 4;
+            x += p[0] - '0';
+        }
+        else if (p[0] >= 'a' && p[0] <= 'f')
+        {
+            x <<= 4;
+            x += p[0] - 'a' + 10;
+        }
+        else if (p[0] >= 'A' && p[0] <= 'F')
+        {
+            x <<= 4;
+            x += p[0] - 'A' + 10;
+        }
+        else
+        {
+            return -1;
+        }
+        
+    }
+
+    return sign * x;
+}

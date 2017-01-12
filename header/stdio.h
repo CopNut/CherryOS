@@ -37,6 +37,8 @@
 	unsigned int write_dec(char* buffer,int value);
 	unsigned int write_hex(char* buffer,int value);
 	size_t itoa(char *string, int *intPtr);
+	int atoi_dec(const uchar *string);
+	int atoi_hex(const uchar *string);
 	size_t dec_intlen(int integer);
 
 	/*tools\Cherry\ascTable.c*/

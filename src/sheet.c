@@ -1,9 +1,10 @@
 #include <stdio.h>
 #include <sheet.h>
-
+#include <font.h>
 
 #define SHEET_USE		1
 extern ShtCtlPtr ctl;
+extern Fontinfo fontinfo;
 
 ShtCtlPtr ShtCtl__construct(unsigned char *vram, int xsize, int ysize, MemoryPtr memory)
 {
@@ -13,7 +14,9 @@ ShtCtlPtr ShtCtl__construct(unsigned char *vram, int xsize, int ysize, MemoryPtr
 	shtctl = (ShtCtlPtr)Memory_alloc_4k(memory, sizeof(ShtCtl));
 	//debug
 	shtctl->vram = vram;
+#ifdef ALLOCMAP
 	shtctl->map = (uchar *)Memory_alloc_4k(memory, xsize * ysize);
+#endif
 	//debug
 	shtctl->xsize = xsize;
 	shtctl->ysize = ysize;
@@ -51,7 +54,8 @@ void Sheet_setbuf(struct SHEET *sht, unsigned char *buf, int xsize, int ysize, i
 void Sheet_updown(struct SHEET *sht, int height)
 {
 	int h, old = sht->height;
-
+	int vx0 = sht->vx0, vy0 = sht->vy0, xsize = sht->bxsize, ysize = sht->bysize;
+	uchar *vram = ctl->vram;
 	
 	if (height > ctl->top + 1) {
 		height = ctl->top + 1;
@@ -80,7 +84,8 @@ void Sheet_updown(struct SHEET *sht, int height)
 			}
 			ctl->top--; 
 		}
-		Sheet_refresh(ctl); 
+		Sheet_refreshmap(vx0, vy0, xsize, ysize, 0);
+		Sheet_refreshsub(vx0, vy0, xsize, ysize, 0, ctl->top); 
 	} else if (old < height) {	
 		if (old >= 0) {
 			
@@ -98,7 +103,10 @@ void Sheet_updown(struct SHEET *sht, int height)
 			ctl->sheets[height] = sht;
 			ctl->top++; 
 		}
-		Sheet_refresh(ctl); 
+		Sheet_refreshmap(vx0, vy0, xsize, ysize, 0);
+		Sheet_refreshsub(vx0, vy0, xsize, ysize, 0, ctl->top);
+		// Sheet_wtf();
+		// vram[1] = 1;
 	}
 	return;
 }
@@ -125,7 +133,17 @@ void Sheet_refresh()
 	return;
 }
 
-void Sheet_refreshmap(int rfx0, int rfy0, int rfxsize, int rfysize)
+void Sheet_wtf()
+{
+	
+	unsigned char *vram = ctl->vram;
+	
+			vram[0] = 1;
+
+	return;
+}
+
+void Sheet_refreshmap(int rfx0, int rfy0, int rfxsize, int rfysize, int h0)
 {
 	int h;
 	//sheetheight
@@ -135,18 +153,19 @@ void Sheet_refreshmap(int rfx0, int rfy0, int rfxsize, int rfysize)
 	//aim refresh area coordinate
 	int vx0, vy0, vx1, vy1, tempvx0;
 	//final refreshsub area coordinate
-	unsigned char *buf, c, sid, *map = ctl->map;
+	unsigned char *buf, c;
+	uchar *map = ctl->map;
+	uchar *vram = ctl->vram;
 	//sheetbuf & pixel_color & sheet_height & pointer to the map
 	struct SHEET *sht;
 	//pointer to the present sheetheight sheet
 
-	rfx1 = rfx0 + rfxsize < ctl->xsize ? rfx0 + rfxsize : ctl->xsize - 1;
-	rfy1 = rfy0 + rfysize < ctl->ysize ? rfy0 + rfysize : ctl->ysize - 1;
+	rfx1 = rfx0 + rfxsize - 1 <= ctl->xsize - 1 ? rfx0 + rfxsize - 1 : ctl->xsize - 1;
+	rfy1 = rfy0 + rfysize - 1 <= ctl->ysize - 1 ? rfy0 + rfysize - 1 : ctl->ysize - 1;
 	//edge overflow fix
 
-	for (h = 0; h <= ctl->top; h++) {
+	for (h = h0; h <= ctl->top; h++) {
 		sht = ctl->sheets[h];
-		sid = 
 		shtx0 = sht->vx0;
 		shty0 = sht->vy0;
 		shtx1 = shtx0 + sht->bxsize - 1;
@@ -172,17 +191,16 @@ void Sheet_refreshmap(int rfx0, int rfy0, int rfxsize, int rfysize)
 				c = buf[i * sht->bxsize + j];
 				//i & j are the pointers for the sheetbuf
 				if (c != sht->col_inv) {
-					map[vy0 * ctl->xsize + vx0] = sid;
+					map[vy0 * ctl->xsize + vx0] = h;
 					//vy0 & vx0 are the pointers for the vram
 				}
 			}//vx loop
 		}//vy loop
 	}//height loop
-
 	return;
 }
 
-void Sheet_refreshsub(int rfx0, int rfy0, int rfxsize, int rfysize)
+void Sheet_refreshsub(int rfx0, int rfy0, int rfxsize, int rfysize, int h0, int h1)
 {
 	int h;
 	//sheetheight
@@ -192,16 +210,18 @@ void Sheet_refreshsub(int rfx0, int rfy0, int rfxsize, int rfysize)
 	//aim refresh area coordinate
 	int vx0, vy0, vx1, vy1, tempvx0;
 	//final refreshsub area coordinate
-	unsigned char *buf, c, *vram = ctl->vram;
+	unsigned char *buf, c;
+	uchar *vram = ctl->vram;
+	uchar *map = ctl->map;
 	//sheetbuf & pixel_color_buf & pointer to the vram
 	struct SHEET *sht;
 	//pointer to the present sheetheight sheet
 
-	rfx1 = rfx0 + rfxsize < ctl->xsize ? rfx0 + rfxsize : ctl->xsize - 1;
-	rfy1 = rfy0 + rfysize < ctl->ysize ? rfy0 + rfysize : ctl->ysize - 1;
+	rfx1 = rfx0 + rfxsize - 1 <= ctl->xsize - 1 ? rfx0 + rfxsize - 1 : ctl->xsize - 1;
+	rfy1 = rfy0 + rfysize - 1 <= ctl->ysize - 1 ? rfy0 + rfysize - 1 : ctl->ysize - 1;
 	//edge overflow fix
-
-	for (h = 0; h <= ctl->top; h++) {
+	
+	for (h = h0; h <= h1; h++) {
 		sht = ctl->sheets[h];
 		shtx0 = sht->vx0;
 		shty0 = sht->vy0;
@@ -227,7 +247,8 @@ void Sheet_refreshsub(int rfx0, int rfy0, int rfxsize, int rfysize)
 				
 				c = buf[i * sht->bxsize + j];
 				//i & j are the pointers for the sheetbuf
-				if (c != sht->col_inv) {
+				if (map[vy0 * ctl->xsize + vx0] == sht->height) {
+				// if (c != sht->col_inv) {
 					vram[vy0 * ctl->xsize + vx0] = c;
 					//vy0 & vx0 are the pointers for the vram
 				}
@@ -245,8 +266,10 @@ void Sheet_slide(struct SHEET *sht, int vx0, int vy0)
 	sht->vx0 = vx0;
 	sht->vy0 = vy0;
 	if (sht->height >= 0) { 
-		Sheet_refreshsub(vx0, vy0, sht->bxsize, sht->bysize); 
-		Sheet_refreshsub(oldvx0, oldvy0, sht->bxsize, sht->bysize);
+		Sheet_refreshmap(oldvx0, oldvy0, sht->bxsize, sht->bysize, 0);		
+		Sheet_refreshmap(vx0, vy0, sht->bxsize, sht->bysize, sht->height); //只需刷新移动图层以上的部分，否则会出现刷新底层多余图层的时间浪费
+		Sheet_refreshsub(oldvx0, oldvy0, sht->bxsize, sht->bysize, 0, sht->height - 1);
+		Sheet_refreshsub(vx0, vy0, sht->bxsize, sht->bysize, sht->height, sht->height); 
 	}
 	return;
 }
@@ -262,10 +285,10 @@ void Sheet_free(struct SHEET *sht)
 
 void Sheet_put_string(Sheet *sht, char *str, int x, int y, char b, char c)
 {
-	int boxXsize = strlen(str) * (FONT_X_SIZE + 2 * FONT_X_MARGIN) - 1;
-	int boxYsize = FONT_Y_SIZE + 2 * FONT_Y_MARGIN - 1;
-	fill_box(sht->buf, sht->bxsize, x, y, b, boxXsize, boxYsize);
+	int width_box = strlen(str) * fontinfo.width_box;
+	int height_box = fontinfo.height_box;
+	fill_box(sht->buf, sht->bxsize, x, y, b, width_box, height_box);
 	put_string(sht->buf, sht->bxsize, x, y, str, c);
-	Sheet_refreshsub(x, y, boxXsize, boxYsize);
+	Sheet_refreshsub(x, y, width_box, height_box, sht->height, sht->height);
 	return;
 }

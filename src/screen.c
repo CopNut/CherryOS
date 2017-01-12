@@ -1,7 +1,5 @@
 #include <stdio.h>
-#include <bootinfo.h>
-#include <memory.h>
-#include <screen.h>
+#include <CherryOS.h>
 
 void Screen__construct(Screen *this, Bootinfo *binfo, uchar *buf_bg, unsigned char bcolor)
 {

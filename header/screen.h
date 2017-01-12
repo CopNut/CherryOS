@@ -18,14 +18,6 @@ void Screen_init_palette(Screen *this);
 void Screen_draw_bg(Screen *this);
 
 
-
-void put_font(char *vram, int xsize, int x, int y, char *font, char color);
-void put_string(char *vram, int xsize, int x, int y, char *string, char color);
-void get_box(char *vram, int xsize, int x, int y, char *buffer, int bxsize, int bysize);
-void put_box(char *vram, int xsize, int x, int y, char *buffer, int bxsize, int bysize);
-void fill_box(char *vram, int xsize, int x, int y, char color, int bxsize, int bysize);
-
-
 #define VGA_TOTAL_BYTES 0xfa00
 #define PALETTE_START 0
 #define PALETTE_END 15

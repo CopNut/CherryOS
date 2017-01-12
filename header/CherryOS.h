@@ -1,4 +1,7 @@
-
+#ifndef STDIO_H
+#define STDIO_H
+#include <stdio.h>
+#endif
 
 #ifndef BOOTINFO_H
 #define BOOTINFO_H 1
@@ -17,6 +20,10 @@
 #include <screen.h>
 #endif
 
+#ifndef FONT_H
+#define FONT_H 1
+#include <font.h>
+#endif
 
 #ifndef MOUSE_H
 #define MOUSE_H 1
