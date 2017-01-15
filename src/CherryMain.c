@@ -30,6 +30,7 @@ void CherryMain() {
 	char buf[160];
 	uint buf_fifo32[128];
 	uint data;
+	uchar *addr1, *addr2, *addr3;
 
 	gdt_install();
 	idt_install();
@@ -54,17 +55,29 @@ void CherryMain() {
 
 	Font__construct(FONT_HEIGHT, FONT_WIDTH, FONT_MARGIN_VERTICAL, FONT_MARGIN_PARALELL, BLACK);
 
-	uchar *buf_bg = (uchar *)Memory_alloc_4k(memory, (screen.xsize * screen.ysize));
+	uchar *buf_bg = Memory_alloc_4k(memory, binfo->xsize * binfo->ysize);	
 	Screen__construct(&screen, binfo, buf_bg, BCOLOR);
 	sheetBg = Sheet_alloc();
-	//------------------------------------put some info---------------------------------------
-	sprintf(str, "(%d,%d)", mouse.px, mouse.py);
- 	put_string(screen.buf_bg, binfo->xsize, 0, 0, str, BLACK);
- 	sprintf(str, "MEMSIZE_PHY = %dMB", memory->physize / 1024 / 1024);
- 	put_string(screen.buf_bg, binfo->xsize, 0, 50, str, BLACK);
- 	sprintf(str, "MEMSIZE_FREE = %dMB", memory->freesize / 1024 / 1024);
- 	put_string(screen.buf_bg, binfo->xsize, 0, 70, str, BLACK);
- 	//----------------------------------------------------------------------------------------
+
+	/**************************************************/
+	/*                  Memory debug                  */
+	/**************************************************/
+	
+	addr1 = Memory_alloc_4k(memory, 1000);
+	addr2 = Memory_alloc_4k(memory, 100000);
+	addr3 = Memory_alloc_4k(memory, 0x10000);
+
+	sprintf(str, "addr1 = %x", addr1);
+	put_string(screen.buf_bg, binfo->xsize, 0, 50, str, WHITE);
+	sprintf(str, "addr2 = %x", addr2);
+	put_string(screen.buf_bg, binfo->xsize, 0, 70, str, WHITE);
+	sprintf(str, "addr3 = %x", addr3);
+	put_string(screen.buf_bg, binfo->xsize, 0, 90, str, WHITE);
+	sprintf(str, "buf_bg = %x", buf_bg);
+	put_string(screen.buf_bg, binfo->xsize, 0, 110, str, WHITE);
+	sprintf(str, "shtctl = %x %x %x", ctl, ctl->vram, ctl->map);
+	put_string(screen.buf_bg, binfo->xsize, 0, 130, str, WHITE);
+
 	Sheet_setbuf(sheetBg, screen.buf_bg, screen.xsize, screen.ysize, 0xff);
 	Sheet_slide(sheetBg, 0, 0);
 	Sheet_updown(sheetBg, 0);

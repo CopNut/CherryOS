@@ -166,7 +166,7 @@ uint Memory_alloc_4k(Memory *this, uint size){
 
 	uint addr;
 	size = (size + 0xfff) & 0xfffff000;
-	Memory_alloc(this, size);
+	addr = Memory_alloc(this, size);
 
 	return addr;
 }

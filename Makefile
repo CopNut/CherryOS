@@ -1,2 +1,2 @@
 default:
-	make run -C ./src
+	make vb -C ./src
