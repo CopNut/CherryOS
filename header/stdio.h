@@ -43,6 +43,7 @@
 
 	/*tools\Cherry\ascTable.c*/
 	extern char asc_table[4096];
+	extern char key_table[0x54];
 
 
 #if (defined(__cplusplus))

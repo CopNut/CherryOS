@@ -58,26 +58,6 @@ void CherryMain() {
 	uchar *buf_bg = Memory_alloc_4k(memory, binfo->xsize * binfo->ysize);	
 	Screen__construct(&screen, binfo, buf_bg, BCOLOR);
 	sheetBg = Sheet_alloc();
-
-	/**************************************************/
-	/*                  Memory debug                  */
-	/**************************************************/
-	
-	addr1 = Memory_alloc_4k(memory, 1000);
-	addr2 = Memory_alloc_4k(memory, 100000);
-	addr3 = Memory_alloc_4k(memory, 0x10000);
-
-	sprintf(str, "addr1 = %x", addr1);
-	put_string(screen.buf_bg, binfo->xsize, 0, 50, str, WHITE);
-	sprintf(str, "addr2 = %x", addr2);
-	put_string(screen.buf_bg, binfo->xsize, 0, 70, str, WHITE);
-	sprintf(str, "addr3 = %x", addr3);
-	put_string(screen.buf_bg, binfo->xsize, 0, 90, str, WHITE);
-	sprintf(str, "buf_bg = %x", buf_bg);
-	put_string(screen.buf_bg, binfo->xsize, 0, 110, str, WHITE);
-	sprintf(str, "shtctl = %x %x %x", ctl, ctl->vram, ctl->map);
-	put_string(screen.buf_bg, binfo->xsize, 0, 130, str, WHITE);
-
 	Sheet_setbuf(sheetBg, screen.buf_bg, screen.xsize, screen.ysize, 0xff);
 	Sheet_slide(sheetBg, 0, 0);
 	Sheet_updown(sheetBg, 0);
@@ -87,8 +67,6 @@ void CherryMain() {
 	Sheet_setbuf(sheetMouse, mouse.cursor, mouse.xsize, mouse.ysize, 0xff);
 	Sheet_slide(sheetMouse, mouse.px, mouse.py);
 	Sheet_updown(sheetMouse, 1);
-
-	// Sheet_refresh();
 
 	Mouse_enable();
 
@@ -107,6 +85,12 @@ void CherryMain() {
 				//data from keydoard
 				sprintf(str, "%x", data - data_shift_key);
 				Sheet_put_string(sheetBg, str, 0, 16, BCOLOR, BLACK);
+				if (data < 0x54 && data != 0)
+				{
+					str[0] = key_table[data];
+					str[1] = 0;
+					Sheet_put_string(sheetBg, str, 200, 200, BCOLOR, WHITE);
+				}
 			}else if (FIFO_MOUSE_START <= data && data <= FIFO_MOUSE_END){
 				//data from mouse
 				if(Mouse_dcode(&mouse, data - data_shift_mouse)){
@@ -129,17 +113,3 @@ void CherryMain() {
 		}
 	}
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
