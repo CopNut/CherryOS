@@ -13,12 +13,7 @@ typedef struct SHEET {
 	int bxsize, bysize, vx0, vy0, col_inv, height, flags;
 }Sheet, *SheetPtr;
 typedef struct SHTCTL {
-#ifndef ALLOCMAP
-	unsigned char *vram, map[640 * 480];
-#endif
-#ifdef ALLOCMAP
 	unsigned char *vram, *map;
-#endif
 	int xsize, ysize, top;
 	struct SHEET *sheets[MAX_SHEETS];
 	struct SHEET sheets0[MAX_SHEETS];

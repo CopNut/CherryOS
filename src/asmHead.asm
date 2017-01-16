@@ -23,7 +23,7 @@ HD1_DATA 			EQU 0x0020
 		ORG		0x10200			; ‚±‚ÌƒvƒƒOƒ‰ƒ€‚ª‚Ç‚±‚É“Ç‚Ýž‚Ü‚ê‚é‚Ì‚©
 
 ;画面模式设定
-jmp scrn320
+;jmp scrn320
 		MOV 	AX, 0x9000
 		MOV 	ES, AX
 		MOV 	DI, 0x100

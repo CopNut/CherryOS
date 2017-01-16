@@ -32,6 +32,7 @@ void CherryMain() {
 	char buf[160];
 	uint buf_fifo32[128];
 	uint data;
+	uchar *addr1, *addr2, *addr3;
 
 	gdt_install();
 	idt_install();
@@ -56,17 +57,13 @@ void CherryMain() {
 
 	Font__construct(FONT_HEIGHT, FONT_WIDTH, FONT_MARGIN_VERTICAL, FONT_MARGIN_PARALELL, BLACK);
 
+<<<<<<< HEAD
 	uchar *buf_bg = (uchar *)Memory_alloc_4k(memory, binfo->xsize * binfo->ysize);
+=======
+	uchar *buf_bg = Memory_alloc_4k(memory, binfo->xsize * binfo->ysize);	
+>>>>>>> 16fb828e5185bb3043d0545ba7b0fc2181dc5107
 	Screen__construct(&screen, binfo, buf_bg, BCOLOR);
 	sheetBg = Sheet_alloc();
-	//------------------------------------put some info---------------------------------------
-	sprintf(str, "(%d,%d)", mouse.px, mouse.py);
- 	put_string(screen.buf_bg, binfo->xsize, 0, 0, str, BLACK);
- 	sprintf(str, "MEMSIZE_PHY = %dMB", memory->physize / 1024 / 1024);
- 	put_string(screen.buf_bg, binfo->xsize, 0, 50, str, BLACK);
- 	sprintf(str, "MEMSIZE_FREE = %dMB", memory->freesize / 1024 / 1024);
- 	put_string(screen.buf_bg, binfo->xsize, 0, 70, str, BLACK);
- 	//----------------------------------------------------------------------------------------
 	Sheet_setbuf(sheetBg, screen.buf_bg, screen.xsize, screen.ysize, 0xff);
 	Sheet_slide(sheetBg, 0, 0);
 	Sheet_updown(sheetBg, 0);
@@ -77,10 +74,13 @@ void CherryMain() {
 	Sheet_slide(sheetMouse, mouse.px, mouse.py);
 	Sheet_updown(sheetMouse, 1);
 
+<<<<<<< HEAD
 	Window__construct(&window);
 	sprintf(str, "buf_window at %x", window.buf_sheet);
  	Sheet_put_string(sheetBg, str, 0, 110, BCOLOR, BLACK);
 
+=======
+>>>>>>> 16fb828e5185bb3043d0545ba7b0fc2181dc5107
 	Mouse_enable();
 
 	while(1)
@@ -102,7 +102,11 @@ void CherryMain() {
 				{
 					str[0] = key_table[data];
 					str[1] = 0;
+<<<<<<< HEAD
 					Sheet_put_string(window.sht, str, 10, 30, WHITE, PINK);
+=======
+					Sheet_put_string(sheetBg, str, 200, 200, BCOLOR, WHITE);
+>>>>>>> 16fb828e5185bb3043d0545ba7b0fc2181dc5107
 				}
 			}else if (FIFO_MOUSE_START <= data && data <= FIFO_MOUSE_END){
 				//data from mouse
@@ -126,17 +130,3 @@ void CherryMain() {
 		}
 	}
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-

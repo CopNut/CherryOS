@@ -14,9 +14,7 @@ ShtCtlPtr ShtCtl__construct(unsigned char *vram, int xsize, int ysize, MemoryPtr
 	shtctl = (ShtCtlPtr)Memory_alloc_4k(memory, sizeof(ShtCtl));
 	//debug
 	shtctl->vram = vram;
-#ifdef ALLOCMAP
 	shtctl->map = (uchar *)Memory_alloc_4k(memory, xsize * ysize);
-#endif
 	//debug
 	shtctl->xsize = xsize;
 	shtctl->ysize = ysize;
