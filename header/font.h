@@ -22,3 +22,4 @@ typedef struct Fontinfo{
 void put_font(char *vram, int xsize, int x, int y, char *font, char color);
 void put_string(char *vram, int xsize, int x, int y, char *string, char color);
 void fill_box(char *vram, int xsize, int x, int y, char color, int bxsize, int bysize);
+void copy_box(char *buf, int xsize, int x, int y, const char *src, int bxsize, int bysize);

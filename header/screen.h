@@ -1,3 +1,8 @@
+#ifndef BOOTINFO_H
+#define BOOTINFO_H 1
+#include <bootinfo.h>
+#endif
+
 //----------object screen----------
 typedef struct Screen {
 	char *vram;

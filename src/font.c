@@ -56,3 +56,15 @@ void fill_box(char *buf, int xsize, int x, int y, char color, int bxsize, int by
 	}
 	return;
 }
+
+void copy_box(char *buf, int xsize, int x, int y, const char *src, int bxsize, int bysize){
+
+	for (int i = 0; i < bysize; ++i)
+	{
+		for (int j = 0; j < bxsize; ++j)
+		{
+			buf[(y + i) * xsize + x + j] = src[i * bxsize + j];
+		}
+	}
+	return;
+}

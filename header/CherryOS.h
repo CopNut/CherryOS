@@ -53,6 +53,11 @@
 #include <timer.h>
 #endif
 
+#ifndef WINDOW_H
+#define WINDOW_H
+#include <window.h>
+#endif
+
 
 
 /*gdt.c idt.c*/

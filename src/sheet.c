@@ -289,6 +289,6 @@ void Sheet_put_string(Sheet *sht, char *str, int x, int y, char b, char c)
 	int height_box = fontinfo.height_box;
 	fill_box(sht->buf, sht->bxsize, x, y, b, width_box, height_box);
 	put_string(sht->buf, sht->bxsize, x, y, str, c);
-	Sheet_refreshsub(x, y, width_box, height_box, sht->height, sht->height);
+	Sheet_refreshsub(x + sht->vx0, y + sht->vy0, width_box, height_box, sht->height, sht->height);
 	return;
 }

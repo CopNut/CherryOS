@@ -26,6 +26,8 @@ void CherryMain() {
 	SheetPtr sheetBg, sheetMouse, sheetWindow;
 	TimerPtr timerPtr;
 
+	Window window;
+
 	char str[100];
 	char buf[160];
 	uint buf_fifo32[128];
@@ -54,7 +56,7 @@ void CherryMain() {
 
 	Font__construct(FONT_HEIGHT, FONT_WIDTH, FONT_MARGIN_VERTICAL, FONT_MARGIN_PARALELL, BLACK);
 
-	uchar *buf_bg = (uchar *)Memory_alloc_4k(memory, (screen.xsize * screen.ysize));
+	uchar *buf_bg = (uchar *)Memory_alloc_4k(memory, binfo->xsize * binfo->ysize);
 	Screen__construct(&screen, binfo, buf_bg, BCOLOR);
 	sheetBg = Sheet_alloc();
 	//------------------------------------put some info---------------------------------------
@@ -75,7 +77,9 @@ void CherryMain() {
 	Sheet_slide(sheetMouse, mouse.px, mouse.py);
 	Sheet_updown(sheetMouse, 1);
 
-	// Sheet_refresh();
+	Window__construct(&window);
+	sprintf(str, "buf_window at %x", window.buf_sheet);
+ 	Sheet_put_string(sheetBg, str, 0, 110, BCOLOR, BLACK);
 
 	Mouse_enable();
 
@@ -94,6 +98,12 @@ void CherryMain() {
 				//data from keydoard
 				sprintf(str, "%x", data - data_shift_key);
 				Sheet_put_string(sheetBg, str, 0, 16, BCOLOR, BLACK);
+				if (data < 0x54 && data != 0)
+				{
+					str[0] = key_table[data];
+					str[1] = 0;
+					Sheet_put_string(window.sht, str, 10, 30, WHITE, PINK);
+				}
 			}else if (FIFO_MOUSE_START <= data && data <= FIFO_MOUSE_END){
 				//data from mouse
 				if(Mouse_dcode(&mouse, data - data_shift_mouse)){
