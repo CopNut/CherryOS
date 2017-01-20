@@ -5,84 +5,85 @@
 #define PIT_CNT0 0x0040
 
 FIFO32Ptr timerfifo;
+extern TimerCtl timerCtl;
 uint data_shift_timer;
 
-void Timer__construct(TimerCtlPtr this, FIFO32Ptr fifo, uint shift)
+void Timer__construct(uint shift)
 {
 	uint i;
 	TimerPtr timerPtr;
 
-	timerfifo = fifo;
 	data_shift_timer = shift;
 	io_8bits_out(PIT_CTRL, 0x34);
 	io_8bits_out(PIT_CNT0, 0x9c);
 	io_8bits_out(PIT_CNT0, 0x2e);
-	this->count = 0;
-	this->start.next = &(this->end);
+	timerCtl.count = 0;
+	timerCtl.start.next = &(timerCtl.end);
 	for (i = 0; i < SIZE_TIMERS; ++i)
 	{
-		timerPtr = &(this->timers[i]);
+		timerPtr = &(timerCtl.timers[i]);
 		timerPtr->timeout = 0;
 		timerPtr->flag = FLAG_TIMER_FREE;
 		timerPtr->next = NULL;
 	}
-	this->end.timeout = 0xffffffff;
-	this->end.flag = FLAG_TIMER_USING;
-	this->end.next = NULL;
-	this->next = &(this->end);
+	timerCtl.end.timeout = 0xffffffff;
+	timerCtl.end.flag = FLAG_TIMER_USING;
+	timerCtl.end.next = NULL;
+	timerCtl.next = &(timerCtl.end);
 	return;
 }
 
-TimerPtr Timer_set_timeout(TimerCtlPtr this, uint timeout){
+TimerPtr Timer_alloc()
+{
+	int i;
+	for (i = 0; i < SIZE_TIMERS; i++) {
+		if (timerCtl.timers[i].flag == FLAG_TIMER_FREE) {
+			timerCtl.timers[i].flag = FLAG_TIMER_ALLOC;
+			return &timerCtl.timers[i];
+		}
+	}
+	return 0;
+}
 
-	TimerPtr p, q, new;
-	TimerPtr timerTab = this->timers;
+TimerPtr Timer_set_timeout(TimerPtr timerPtr, uint id, uint timeout, FIFO32Ptr fifo){
+
+	TimerPtr p, q;
+	TimerPtr timerTab = timerCtl.timers;
 	uint i = 0, e;
+
+	timerPtr->id = id;
+	timerPtr->flag = FLAG_TIMER_USING;
+	timerPtr->fifo = fifo;
+	timerPtr->timeout = timerCtl.count + timeout;
 
 	e = io_load_eflags();
 	io_cli();
 
-	for (uint i = 0; i < SIZE_TIMERS; i++)
-	{
-		if (timerTab[i].flag == FLAG_TIMER_FREE)
-		{
-			break;
-		}
-	}
-	if (i == SIZE_TIMERS)
-	{
-		return NULL;
-		//no more timers avilable
-	}
-	new = &timerTab[i];
-	new->flag = FLAG_TIMER_USING;
-	new->timeout = timeout;
-
-
-	p = &(this->start);
+	p = &(timerCtl.start);
 	q = p->next;
-	while(new->timeout >= q->timeout){
+	while(timerPtr->timeout >= q->timeout){
 		p = p->next;
 		q = q->next;
 	}
-	//p => new => q
-	p->next = new;
-	new->next = q;
+	//p => timerPtr => q
+	p->next = timerPtr;
+	timerPtr->next = q;
 
 	//timerCtl->next
-	if (new->timeout > this->count && new->timeout < this->next->timeout)
+	if (timerPtr->timeout > timerCtl.count && timerPtr->timeout < timerCtl.next->timeout)
 	{
-		this->next = new;
+		timerCtl.next = timerPtr;
 	}
 	io_store_eflags(e);
-	return new;
+	return timerPtr;
 }
 
-void Timer_timeout(TimerCtlPtr this)
+
+void Timer_timeout()
 {
-	TimerPtr timeoutedPtr = this->next;
+	TimerPtr timeoutedPtr = timerCtl.next;
 	timeoutedPtr->flag = FLAG_TIMER_ALLOC;
-	this->next = timeoutedPtr->next;
+	timerCtl.next = timeoutedPtr->next;
 	
 	return;
 }

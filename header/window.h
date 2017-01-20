@@ -1,3 +1,8 @@
+#ifndef STDIO_H
+#define STDIO_H 
+#include <stdio.h>
+#endif
+
 #ifndef FONT_H
 #define FONT_H 1
 #include <font.h>
@@ -20,9 +25,9 @@
 
 #define WINDOW_MAX 512
 
-typedef struct Box{
-	ushort x, y, xsize, ysize;
-}Box, *BoxPtr;
+typedef struct { I16P x,y; } GUI_POINT;
+typedef struct { I16 x0,y0,x1,y1; } LCD_RECT;
+/*typedef struct { GUI_POINT P0, P1; } LCD_RECT; */
 
 typedef struct Window{
 	uchar title[64];

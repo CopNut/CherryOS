@@ -3,7 +3,7 @@
 #define FIFO_MOUSE_START	0x100
 #define FIFO_MOUSE_END		0x1ff
 #define FIFO_TIMER_START	0x200
-#define FIFO_TIMER_START	0xffffffff
+#define FIFO_TIMER_END	0xffffffff
 typedef struct FIFO32 {
 	uint *buf;
 	int wp, rp, size, free, flags;

@@ -131,16 +131,6 @@ void Sheet_refresh()
 	return;
 }
 
-void Sheet_wtf()
-{
-	
-	unsigned char *vram = ctl->vram;
-	
-			vram[0] = 1;
-
-	return;
-}
-
 void Sheet_refreshmap(int rfx0, int rfy0, int rfxsize, int rfysize, int h0)
 {
 	int h;
@@ -158,6 +148,8 @@ void Sheet_refreshmap(int rfx0, int rfy0, int rfxsize, int rfysize, int h0)
 	struct SHEET *sht;
 	//pointer to the present sheetheight sheet
 
+	rfx0 = rfx0 >= 0 ? rfx0 : 0;
+	rfy0 = rfy0 >= 0 ? rfy0 : 0;
 	rfx1 = rfx0 + rfxsize - 1 <= ctl->xsize - 1 ? rfx0 + rfxsize - 1 : ctl->xsize - 1;
 	rfy1 = rfy0 + rfysize - 1 <= ctl->ysize - 1 ? rfy0 + rfysize - 1 : ctl->ysize - 1;
 	//edge overflow fix
@@ -215,6 +207,8 @@ void Sheet_refreshsub(int rfx0, int rfy0, int rfxsize, int rfysize, int h0, int 
 	struct SHEET *sht;
 	//pointer to the present sheetheight sheet
 
+	rfx0 = rfx0 >= 0 ? rfx0 : 0;
+	rfy0 = rfy0 >= 0 ? rfy0 : 0;
 	rfx1 = rfx0 + rfxsize - 1 <= ctl->xsize - 1 ? rfx0 + rfxsize - 1 : ctl->xsize - 1;
 	rfy1 = rfy0 + rfysize - 1 <= ctl->ysize - 1 ? rfy0 + rfysize - 1 : ctl->ysize - 1;
 	//edge overflow fix

@@ -10,7 +10,9 @@
 #define FLAG_TIMER_USING	0x0002
 
 typedef struct Timer{
+	uint id;
 	uint timeout;
+	FIFO32Ptr fifo;
 	int flag;
 	struct Timer *next;
 }Timer, *TimerPtr;
@@ -26,6 +28,7 @@ typedef struct TimerCtl{
 
 extern TimerCtl timerCtl;
 
-void Timer__construct(TimerCtlPtr this, FIFO32Ptr fifo, uint shift);
-TimerPtr Timer_set_timeout(TimerCtlPtr this, uint timeout);
-void Timer_timeout(TimerCtlPtr this);
+void Timer__construct(uint shift);
+TimerPtr Timer_alloc();
+TimerPtr Timer_set_timeout(TimerPtr timerPtr, uint id, uint timeout, FIFO32Ptr fifo);
+void Timer_timeout();

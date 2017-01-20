@@ -5,13 +5,20 @@
 
 //----------object screen----------
 typedef struct Screen {
-	char *vram;
+	uchar *vram;
 	uchar *buf_bg;
 	unsigned short xsize, ysize;
 	unsigned int memsize;
 	unsigned char bcolor;
 	unsigned char *rgbTable;
 }Screen, *ScreenPtr;
+
+//-----------point & rectangle------------
+typedef struct { short x,y; } ScreenPoint;
+typedef struct { short x0,y0,xsize,ysize; } ScreenRect;
+typedef ScreenPoint Point;
+typedef ScreenRect Rect;
+
 
 //Parameter initialization, palette initialization and draw background with pure color(bcolor)
 void Screen__construct(Screen *this, Bootinfo *binfo, uchar *buf_bg, unsigned char bcolor);

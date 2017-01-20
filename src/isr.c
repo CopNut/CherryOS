@@ -4,7 +4,7 @@
 #define PORT_KEYDAT		0x0060
 
 
-extern FIFO32Ptr keyfifo, mousefifo, timerfifo;
+extern FIFO32Ptr keyfifo, mousefifo;
 extern uint data_shift_key, data_shift_mouse, data_shift_timer;
 
 
@@ -33,11 +33,13 @@ void inthandler20(int *esp)
 //PIT timer
 {
 	uint timeout = timerCtl.next->timeout;
+	uint data 	 = timerCtl.next->id;
+	FIFO32Ptr fifo = timerCtl.next->fifo;
 	io_8bits_out(PIC0_OCW2, 0x60);
 	timerCtl.count++;
 	if (timerCtl.count >= timeout)
 	{
-		FIFO32_put(timerfifo, timeout + data_shift_timer);
+		FIFO32_put(fifo, data + data_shift_timer);
 		Timer_timeout(&timerCtl);
 	}
 	return;

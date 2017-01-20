@@ -6,6 +6,7 @@
 	GLOBAL  _io_load_eflags, _io_store_eflags, _io_load_cr0, _io_store_cr0
 	GLOBAL  _gdt_flush, _idt_load
 	GLOBAL  _Memory_check
+	GLOBAL 	_load_tr, _Task_switch4, _Task_switch3, _farjmp
 
 [SECTION .text]
 
@@ -133,3 +134,19 @@ Memory_fin:
 		pop 	esi
 		pop 	edi
 		ret
+
+_load_tr: ;void load_tr(int tr);
+	LTR 	[ESP + 4]
+	RET
+
+_Task_switch4: ;void Task_switch4(void);
+	JMP 	4*8:0
+	RET
+
+_Task_switch3: ;void Task_switch3(void);
+	JMP 	3*8:0
+	RET
+
+_farjmp: ;void farjmp(int eip, int cs);
+	JMP 	FAR [ESP + 4]
+	RET
