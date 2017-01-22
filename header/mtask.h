@@ -4,32 +4,25 @@
 #endif
 
 
-#define MAX_TASKS		1000	
-#define TASK_GDT0		3		
+#define MAX_TASKS		1000	/* Å‘åƒ^ƒXƒN” */
+#define TASK_GDT0		3		/* TSS‚ðGDT‚Ì‰½”Ô‚©‚çŠ„‚è“–‚Ä‚é‚Ì‚© */
 typedef struct TSS32 {
 	int backlink, esp0, ss0, esp1, ss1, esp2, ss2, cr3;
 	int eip, eflags, eax, ecx, edx, ebx, esp, ebp, esi, edi;
 	int es, cs, ss, ds, fs, gs;
 	int ldtr, iomap;
 }TSS, *TSSPtr;
-
 typedef struct TASK {
-	int sel, flags;
+	int sel, flags; /* sel‚ÍGDT‚Ì”Ô†‚Ì‚±‚Æ */
 	struct TSS32 tss;
 }Task, *TaskPtr;
-
 typedef struct TASKCTL {
-	int running;
-	int now;
-	TaskPtr tasks[MAX_TASKS];
-	Task tasks0[MAX_TASKS];
+	int running; /* “®ì‚µ‚Ä‚¢‚éƒ^ƒXƒN‚Ì” */
+	int now; /* Œ»Ý“®ì‚µ‚Ä‚¢‚éƒ^ƒXƒN‚ª‚Ç‚ê‚¾‚©•ª‚©‚é‚æ‚¤‚É‚·‚é‚½‚ß‚Ì•Ï” */
+	struct TASK *tasks[MAX_TASKS];
+	struct TASK tasks0[MAX_TASKS];
 }TaskCtl, *TaskCtlPtr;
 
-
-void load_tr(int tr);
-void Task_switch3(void);
-void Task_switch4(void);
-void farjmp(int eip, int cs);
-TaskPtr task_init(MemoryPtr memory);
-TaskPtr task_alloc(void);
-void task_run(TaskPtr task);
+extern TimerPtr timerPtr_mt;
+void MT_init(void);
+void MT_taskswitch(void);
