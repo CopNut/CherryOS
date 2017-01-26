@@ -1,34 +1,18 @@
-#ifndef FIFO_H
-#define FIFO_H
-#include <fifo.h>
-#endif
-
-#define SIZE_TIMERS 512
-
-#define FLAG_TIMER_FREE 	0x0000
-#define FLAG_TIMER_ALLOC	0x0001
-#define FLAG_TIMER_USING	0x0002
-
-typedef struct Timer{
-	uint id;
-	uint timeout;
-	FIFO32Ptr fifo;
-	int flag;
-	struct Timer *next;
+#define MAX_TIMER		500
+typedef struct TIMER {
+	struct TIMER *next;
+	unsigned int timeout, flags;
+	struct FIFO32 *fifo;
+	int data;
 }Timer, *TimerPtr;
-
-typedef struct TimerCtl{
-	uint count;
-	Timer start;
-	Timer timers[SIZE_TIMERS];
-	Timer end;
-	TimerPtr next;
+typedef struct TIMERCTL {
+	unsigned int count, next;
+	struct TIMER *t0;
+	struct TIMER timers0[MAX_TIMER];
 }TimerCtl, *TimerCtlPtr;
-
-
-extern TimerCtl timerCtl;
-
-void Timer__construct(uint shift);
-TimerPtr Timer_alloc();
-TimerPtr Timer_set_timeout(TimerPtr timerPtr, uint id, uint timeout, FIFO32Ptr fifo);
-void Timer_timeout();
+extern struct TIMERCTL timerctl;
+void init_pit(uint shift);
+struct TIMER *timer_alloc(void);
+void timer_free(struct TIMER *timer);
+void timer_init(struct TIMER *timer, struct FIFO32 *fifo, int data);
+void timer_settime(struct TIMER *timer, unsigned int timeout);

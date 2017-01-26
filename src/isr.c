@@ -2,11 +2,14 @@
 #include <CherryOS.h>
 
 #define PORT_KEYDAT		0x0060
+#define TIMER_FLAGS_ALLOC		1	/* Šm•Û‚µ‚½ó‘Ô */
+#define TIMER_FLAGS_USING		2	/* ƒ^ƒCƒ}ì“®’† */
 
 
 extern FIFO32Ptr keyfifo, mousefifo;
 extern uint data_shift_key, data_shift_mouse, data_shift_timer;
-extern TimerPtr timerPtr_mt;
+extern TimerPtr timerPtr_task;
+extern struct TIMERCTL timerCtl;
 
 
 void init_pic(void)
@@ -30,37 +33,69 @@ void init_pic(void)
 	return;
 }
 
+// void inthandler20(int *esp)
+// //PIT timer
+// {
+// 	char ts = 0;
+// 	uint timeout = timerCtl.next->timeout;
+// 	uint data 	 = timerCtl.next->id;
+// 	FIFO32Ptr fifo = timerCtl.next->fifo;
+// 	io_8bits_out(PIC0_OCW2, 0x60);
+// 	timerCtl.count++;
+// 	while (timerCtl.count >= timeout)
+// 	{
+// 		if (timerCtl.next == timerPtr_task)
+// 		{
+// 			ts = 1;
+// 		}
+// 		else
+// 		{
+// 			FIFO32_put(fifo, data + data_shift_timer);
+// 		}
+// 		Timer_timeout();
+// 		timeout = timerCtl.next->timeout;
+// 		data 	 = timerCtl.next->id;
+// 		fifo = timerCtl.next->fifo;
+// 	}
+// 	if (ts != 0)
+// 	{
+// 		Task_switch();
+// 	}
+// 	return;
+// }
+
+
 void inthandler20(int *esp)
-//PIT timer
 {
+	struct TIMER *timer;
 	char ts = 0;
-	uint timeout = timerCtl.next->timeout;
-	uint data 	 = timerCtl.next->id;
-	FIFO32Ptr fifo = timerCtl.next->fifo;
-	io_8bits_out(PIC0_OCW2, 0x60);
+	io_8bits_out(PIC0_OCW2, 0x60);	/* IRQ-00Žó•tŠ®—¹‚ðPIC‚É’Ê’m */
 	timerCtl.count++;
-	while (timerCtl.count >= timeout)
-	{
-		if (timerCtl.next == timerPtr_mt)
-		{
-			ts = 1;
-		}
-		else
-		{
-			FIFO32_put(fifo, data + data_shift_timer);
-		}
-		Timer_timeout();
-		timeout = timerCtl.next->timeout;
-		data 	 = timerCtl.next->id;
-		fifo = timerCtl.next->fifo;
+	if (timerCtl.next > timerCtl.count) {
+		return;
 	}
-	if (ts != 0)
-	{
-		MT_taskswitch();
+	timer = timerCtl.t0; /* ‚Æ‚è‚ ‚¦‚¸æ“ª‚Ì”Ô’n‚ðtimer‚É‘ã“ü */
+	for (;;) {
+		/* timers‚Ìƒ^ƒCƒ}‚Í‘S‚Ä“®ì’†‚Ì‚à‚Ì‚È‚Ì‚ÅAflags‚ðŠm”F‚µ‚È‚¢ */
+		if (timer->timeout > timerCtl.count) {
+			break;
+		}
+		/* ƒ^ƒCƒ€ƒAƒEƒg */
+		timer->flags = TIMER_FLAGS_ALLOC;
+		if (timer != timerPtr_task) {
+			FIFO32_put(timer->fifo, timer->data + data_shift_timer);
+		} else {
+			ts = 1; /* task_timer‚ªƒ^ƒCƒ€ƒAƒEƒg‚µ‚½ */
+		}
+		timer = timer->next; /* ŽŸ‚Ìƒ^ƒCƒ}‚Ì”Ô’n‚ðtimer‚É‘ã“ü */
+	}
+	timerCtl.t0 = timer;
+	timerCtl.next = timer->timeout;
+	if (ts != 0) {
+		Task_switch();
 	}
 	return;
 }
-
 
 void inthandler21(int *esp)
 /* PS/2 keyboard */

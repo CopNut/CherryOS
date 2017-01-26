@@ -24,6 +24,14 @@ int FIFO32_put(struct FIFO32 *fifo, uint data)
 	fifo->wp = (fifo->wp + 1 < fifo->size) ? fifo->wp + 1 : 0;
 	fifo->free--;
 
+	if (fifo->task != 0)
+	{
+		if (fifo->task->flags != 2) /* task未处于运行状态 */
+		{
+			Task_run(fifo->task, -1, 0);
+		}
+	}
+
 	return 0;
 }
 

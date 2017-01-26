@@ -25,9 +25,8 @@ void CherryMain() {
 	binfo = (BootinfoPtr)ADDR_BOOTINFO;
 	memory = (MemoryPtr)ADDR_MEMBUF;
 	SheetPtr sheetBg, sheetMouse, sheetWindow;
-	TimerPtr timerPtr1, timerPtr2, timerPtr3;
+	struct TIMER *timerPtr1, *timerPtr2, *timerPtr3;
 
-	Window window;
 
 	char str[100];
 	char buf[160];
@@ -41,14 +40,16 @@ void CherryMain() {
 
 	FIFO32__construct(&fifo32, 128, buf_fifo32);
 
-	Timer__construct(512);
-	timerPtr1 = Timer_alloc();
-	Timer_set_timeout(timerPtr1, 0, 50, &fifo32);
-	timerPtr2 = Timer_alloc();
-	Timer_set_timeout(timerPtr2, 1, 100, &fifo32);
-	timerPtr3 = Timer_alloc();
-	Timer_set_timeout(timerPtr3, 2, 100, &fifo32);
-
+	init_pit(512);
+	timerPtr1 = timer_alloc();
+	timer_init(timerPtr1, &fifo32, 0);
+	timer_settime(timerPtr1, 50);
+	timerPtr2 = timer_alloc();
+	timer_init(timerPtr2, &fifo32, 1);
+	timer_settime(timerPtr2, 100);
+	timerPtr3 = timer_alloc();
+	timer_init(timerPtr3, &fifo32, 2);
+	timer_settime(timerPtr3, 100);
 
 	io_8bits_out(PIC0_IMR, 0xf8);//change from 0xf9 & 0xfe = 0xf8 ,means open the PIT 
 	io_8bits_out(PIC1_IMR, 0xef);
@@ -56,39 +57,6 @@ void CherryMain() {
 	Memory__construct(memory, MEM_CHECK_START, MEM_CHECK_END);
 	Memory_free(memory, 0x00001000, 0x0009c000);
 	Memory_free(memory, 0x00400000, memory->physize - 0x00400000);
-
-/*************************************/
-/*               TSS                 */
-/*************************************/
-	int task_b_esp;
-	task_b_esp = Memory_alloc_4k(memory, 64 * 1024) + 64 * 1024 - 8;
-	TSS tssA, tssB;
-	tssA.ldtr = 0;
-	tssA.iomap = 0x40000000;
-	tssB.ldtr = 0;
-	tssB.iomap = 0x40000000;
-	tssB.eip = (int) &task_b_main - ADR_BOTPAK;
-	tssB.eflags = 0x00000202;
-	tssB.eax = 0;
-	tssB.ecx = 0;
-	tssB.edx = 0;
-	tssB.ebx = 0;
-	tssB.esp = task_b_esp;
-	tssB.ebp = 0;
-	tssB.esi = 0;
-	tssB.edi = 0;
-	tssB.es = 1 * 8;
-	tssB.cs = 2 * 8;
-	tssB.ss = 1 * 8;
-	tssB.ds = 1 * 8;
-	tssB.fs = 1 * 8;
-	tssB.gs = 1 * 8;
-
-    struct SEGMENT_DESCRIPTOR *gdt = (struct SEGMENT_DESCRIPTOR *)ADR_GDT;
-    set_segmdesc(gdt + 3, 103, (int) &tssA, AR_TSS32);
-    set_segmdesc(gdt + 4, 103, (int) &tssB, AR_TSS32);
-    load_tr(3 * 8);
-
 
 	ctl = ShtCtl__construct(binfo->vram, binfo->xsize, binfo->ysize, memory);
 
@@ -99,7 +67,6 @@ void CherryMain() {
 	uchar *buf_bg = (uchar *)Memory_alloc_4k(memory, binfo->xsize * binfo->ysize);
 	Screen__construct(&screen, binfo, buf_bg, BCOLOR);
 	sheetBg = Sheet_alloc();
-	* ((int *) (task_b_esp + 4)) = (int) sheetBg;
 	Sheet_setbuf(sheetBg, screen.buf_bg, screen.xsize, screen.ysize, 0xff);
 	Sheet_slide(sheetBg, 0, 0);
 	Sheet_updown(sheetBg, 0);
@@ -110,13 +77,37 @@ void CherryMain() {
 	Sheet_slide(sheetMouse, mouse.px, mouse.py);
 	Sheet_updown(sheetMouse, 1);
 
-	Window__construct(&window);
-	sprintf(str, "buf_window at %x", window.buf_sheet);
- 	Sheet_put_string(sheetBg, str, 0, 110, BCOLOR, BLACK);
+	Window__construct();
+
+/*************************************/
+/*               TSS                 */
+/*************************************/
+	TaskPtr task_a, task_b[4];
+	SheetPtr window[4];
+
+	task_a = Task_init();
+	fifo32.task = task_a;
+	Task_run(task_a, 1, 0);
+
+	for (int i = 0; i < 3; ++i)
+	{
+		window[i] = Window_alloc("window", i * 170, 100);
+		task_b[i] = Task_alloc();
+		task_b[i]->tss.esp = Memory_alloc_4k(memory, 64 * 1024) + 64 * 1024 - 8;
+		task_b[i]->tss.eip = (int) &task_b_main - ADR_BOTPAK;
+		task_b[i]->tss.es = 1 * 8;
+		task_b[i]->tss.cs = 2 * 8;
+		task_b[i]->tss.ss = 1 * 8;
+		task_b[i]->tss.ds = 1 * 8;
+		task_b[i]->tss.fs = 1 * 8;
+		task_b[i]->tss.gs = 1 * 8;
+		*((int *)(task_b[i]->tss.esp + 4)) = (int)window[i];
+		Task_run(task_b[i], 2, i + 1);		
+	}
+
+	SheetPtr window1 = Window_alloc("window1", 200, 200);
 
 	Mouse_enable();
-
-	MT_init();
 
 	while(1)
 	{
@@ -125,7 +116,8 @@ void CherryMain() {
 
 		io_cli();
 		if (FIFO32_status(&fifo32) == 0){
-			io_stihlt();
+			Task_sleep(task_a);
+			io_sti();
 		}else{
 			data = FIFO32_get(&fifo32);
 			io_sti();
@@ -137,7 +129,7 @@ void CherryMain() {
 				{
 					str[0] = key_table[data];
 					str[1] = 0;
-					Sheet_put_string(window.sht, str, 10, 30, WHITE, PINK);
+					Sheet_put_string(window1, str, 10, 30, WHITE, PINK);
 				}
 			}else if (FIFO_MOUSE_START <= data && data <= FIFO_MOUSE_END){
 				//data from mouse
@@ -150,7 +142,7 @@ void CherryMain() {
 
 					if ((mouse.button & 0x01) != 0)
 					{
-						Sheet_slide(window.sht, window.sht->vx0 + mouse.rx, window.sht->vy0 + mouse.ry);
+						Sheet_slide(window1, window1->vx0 + mouse.rx, window1->vy0 + mouse.ry);
 					}
 
 					Mouse_move(&mouse, &screen, sheetMouse);
@@ -159,17 +151,17 @@ void CherryMain() {
 				//data from timer
 				switch(data){
 					case (FIFO_TIMER_START + 0) :
-						Timer_set_timeout(timerPtr1, 1, 50, &fifo32);
-						fill_box(window.buf_sheet, window.sht->bxsize, 20, 30, BLACK, fontinfo.width_box, fontinfo.height_box);
-						Sheet_refreshsub(window.sht->vx0 + 20, window.sht->vy0 + 30, fontinfo.width_box, fontinfo.height_box, window.sht->height, window.sht->height);
+						timer_settime(timerPtr1, 100);
+						fill_box(window1->buf, window1->bxsize, 20, 30, BLACK, fontinfo.width_box, fontinfo.height_box);
+						Sheet_refreshsub(window1->vx0 + 20, window1->vy0 + 30, fontinfo.width_box, fontinfo.height_box, window1->height, window1->height);
 						break;
 					case (FIFO_TIMER_START + 1) :
-						Timer_set_timeout(timerPtr2, 0, 50, &fifo32);
-						fill_box(window.buf_sheet, window.sht->bxsize, 20, 30, WHITE, fontinfo.width_box, fontinfo.height_box);
-						Sheet_refreshsub(window.sht->vx0 + 20, window.sht->vy0 + 30, fontinfo.width_box, fontinfo.height_box, window.sht->height, window.sht->height);
+						timer_settime(timerPtr2, 100);
+						fill_box(window1->buf, window1->bxsize, 20, 30, WHITE, fontinfo.width_box, fontinfo.height_box);
+						Sheet_refreshsub(window1->vx0 + 20, window1->vy0 + 30, fontinfo.width_box, fontinfo.height_box, window1->height, window1->height);
 						break;
 					case (FIFO_TIMER_START + 2) :
-						Timer_set_timeout(timerPtr3, 2, 100, &fifo32);
+						timer_settime(timerPtr3, 100);
 						sprintf(str, "%d secs", ++count);
 						Sheet_put_string(sheetBg, str, 320, 0, BCOLOR, BLACK);
 				}
@@ -183,14 +175,16 @@ void task_b_main(SheetPtr sheetBg){
 	FIFO32 fifo;
 	uint buf_fifo[128], data, count = 0, count0 = 0;
 	char str[11];
-	TimerPtr timerPtr1, timerPtr2;
+	struct TIMER *timerPtr1, *timerPtr2;
 
 	FIFO32__construct(&fifo, 128, buf_fifo);
-	timerPtr1 = Timer_alloc();
-	Timer_set_timeout(timerPtr1, 2, 1, &fifo);
-	timerPtr2 = Timer_alloc();
-	Timer_set_timeout(timerPtr2, 3, 100, &fifo);
 
+	timerPtr1 = timer_alloc();
+	timer_init(timerPtr1, &fifo, 2);
+	timer_settime(timerPtr1, 1);
+	timerPtr2 = timer_alloc();
+	timer_init(timerPtr2, &fifo, 3);
+	timer_settime(timerPtr2, 100);
 
 	for (;;)
 	{
@@ -207,18 +201,16 @@ void task_b_main(SheetPtr sheetBg){
 
 			if (data == FIFO_TIMER_START + 2)
 			{
-				Timer_set_timeout(timerPtr1, 2, 1, &fifo);
-
 				sprintf(str, "%d", count);
-				Sheet_put_string(sheetBg, str, 320, 32, BCOLOR, BLACK);
+				Sheet_put_string(sheetBg, str, fontinfo.margin_parallel, fontinfo.height_box, WHITE, BLACK);
+				timer_settime(timerPtr1, 1);
 			}
 			else if (data == FIFO_TIMER_START + 3)
 			{
-				Timer_set_timeout(timerPtr2, 3, 100, &fifo);
 				sprintf(str, "%d", count - count0);
-				Sheet_put_string(sheetBg, str, 320, 48, BCOLOR, WHITE);
+				Sheet_put_string(sheetBg, str, fontinfo.margin_parallel, 2 * fontinfo.height_box, WHITE, RED);
 				count0 = count;
-				
+				timer_settime(timerPtr2, 100);
 			}
 		}
 	}

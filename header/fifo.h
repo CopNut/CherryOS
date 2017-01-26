@@ -1,3 +1,8 @@
+#ifndef MTASK_H
+#define MTASK_H 1
+#include <mtask.h>
+#endif
+
 #define FIFO_KEY_START 		0x00
 #define FIFO_KEY_END		0xff
 #define FIFO_MOUSE_START	0x100
@@ -7,6 +12,7 @@
 typedef struct FIFO32 {
 	uint *buf;
 	int wp, rp, size, free, flags;
+	struct TASK *task;
 }FIFO32, *FIFO32Ptr;
 
 void FIFO32__construct(struct FIFO32 *fifo, int size, uint *buf);
