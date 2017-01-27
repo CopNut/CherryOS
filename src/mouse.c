@@ -1,7 +1,8 @@
 #include <stdio.h>
 #include <CherryOS.h>
 
-extern ShtCtl shtCtl;
+extern ShtCtlPtr ctl;
+extern Mouse mouse;
 extern Bootinfo *binfo;
 FIFO32Ptr mousefifo;
 uint data_shift_mouse;
@@ -124,6 +125,7 @@ void Mouse_move(Mouse *this, Screen *scn, Sheet *sht)
 		this->py = 0;
 	}
 	Sheet_slide(sht, this->px, this->py);
-
+	Sheet_refreshmap(this->px, this->py, 1, 1, 0, ctl->top - 1);
+	mouse.aim = ctl->map[this->py * ctl->xsize + this->px];
 	return;
 }

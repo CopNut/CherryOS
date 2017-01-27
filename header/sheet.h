@@ -24,7 +24,7 @@ void Sheet_setbuf(struct SHEET *sht, unsigned char *buf, int xsize, int ysize, i
 void Sheet_updown(struct SHEET *sht, int height);
 void Sheet_refresh();
 void Sheet_wtf();
-void Sheet_refreshmap(int rfx0, int rfy0, int rfxsize, int rfysize, int h0);
+void Sheet_refreshmap(int rfx0, int rfy0, int rfxsize, int rfysize, int h0, int h1);
 void Sheet_refreshsub(int rfx0, int rfy0, int rfxsize, int rfysize, int h0, int h1);
 void Sheet_slide(struct SHEET *sht, int vx0, int vy0);
 void Sheet_free(struct SHEET *sht);

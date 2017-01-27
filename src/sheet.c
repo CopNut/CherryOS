@@ -82,7 +82,7 @@ void Sheet_updown(struct SHEET *sht, int height)
 			}
 			ctl->top--; 
 		}
-		Sheet_refreshmap(vx0, vy0, xsize, ysize, 0);
+		Sheet_refreshmap(vx0, vy0, xsize, ysize, 0, ctl->top);
 		Sheet_refreshsub(vx0, vy0, xsize, ysize, 0, ctl->top); 
 	} else if (old < height) {	
 		if (old >= 0) {
@@ -101,7 +101,7 @@ void Sheet_updown(struct SHEET *sht, int height)
 			ctl->sheets[height] = sht;
 			ctl->top++; 
 		}
-		Sheet_refreshmap(vx0, vy0, xsize, ysize, 0);
+		Sheet_refreshmap(vx0, vy0, xsize, ysize, 0, ctl->top);
 		Sheet_refreshsub(vx0, vy0, xsize, ysize, 0, ctl->top);
 		// Sheet_wtf();
 		// vram[1] = 1;
@@ -131,7 +131,7 @@ void Sheet_refresh()
 	return;
 }
 
-void Sheet_refreshmap(int rfx0, int rfy0, int rfxsize, int rfysize, int h0)
+void Sheet_refreshmap(int rfx0, int rfy0, int rfxsize, int rfysize, int h0, int h1)
 {
 	int h;
 	//sheetheight
@@ -154,7 +154,7 @@ void Sheet_refreshmap(int rfx0, int rfy0, int rfxsize, int rfysize, int h0)
 	rfy1 = rfy0 + rfysize - 1 <= ctl->ysize - 1 ? rfy0 + rfysize - 1 : ctl->ysize - 1;
 	//edge overflow fix
 
-	for (h = h0; h <= ctl->top; h++) {
+	for (h = h0; h <= h1; h++) {
 		sht = ctl->sheets[h];
 		shtx0 = sht->vx0;
 		shty0 = sht->vy0;
@@ -258,8 +258,8 @@ void Sheet_slide(struct SHEET *sht, int vx0, int vy0)
 	sht->vx0 = vx0;
 	sht->vy0 = vy0;
 	if (sht->height >= 0) { 
-		Sheet_refreshmap(oldvx0, oldvy0, sht->bxsize, sht->bysize, 0);		
-		Sheet_refreshmap(vx0, vy0, sht->bxsize, sht->bysize, sht->height); //只需刷新移动图层以上的部分，否则会出现刷新底层多余图层的时间浪费
+		Sheet_refreshmap(oldvx0, oldvy0, sht->bxsize, sht->bysize, 0, ctl->top);		
+		Sheet_refreshmap(vx0, vy0, sht->bxsize, sht->bysize, sht->height, ctl->top); //只需刷新移动图层以上的部分，否则会出现刷新底层多余图层的时间浪费
 		Sheet_refreshsub(oldvx0, oldvy0, sht->bxsize, sht->bysize, 0, sht->height - 1);
 		Sheet_refreshsub(vx0, vy0, sht->bxsize, sht->bysize, sht->height, sht->height); 
 	}

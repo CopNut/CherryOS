@@ -146,6 +146,8 @@ void CherryMain() {
 					}
 
 					Mouse_move(&mouse, &screen, sheetMouse);
+					sprintf(str, "%d", mouse.aim);
+					Sheet_put_string(sheetBg, str, 0, 50, WHITE, PINK);
 				}
 			}else{
 				//data from timer

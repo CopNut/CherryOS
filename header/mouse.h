@@ -22,6 +22,7 @@ typedef struct Mouse {
 	unsigned char button;
 	char cursor[160];
 	char bg[160];
+	int aim;
 }Mouse, *MousePtr;
 
 //mousebuf[128],decodebuf[3],cursor[160]
