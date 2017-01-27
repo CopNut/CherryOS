@@ -1,5 +1,6 @@
 #include <stdio.h>
-#include <font.h>
+// #include <font.h>
+#include <CherryOS.h>
 
 extern Fontinfo fontinfo;
 
@@ -57,13 +58,13 @@ void fill_box(char *buf, int xsize, int x, int y, char color, int bxsize, int by
 	return;
 }
 
-void copy_box(char *buf, int xsize, int x, int y, const char *src, int bxsize, int bysize){
+void copy_box(char *buf, int xsize, int x, int y, uchar *src, int bxsize, int bysize, char color){
 
 	for (int i = 0; i < bysize; ++i)
 	{
 		for (int j = 0; j < bxsize; ++j)
 		{
-			buf[(y + i) * xsize + x + j] = src[i * bxsize + j];
+			buf[(y + i) * xsize + x + j] = (src[i * bxsize + j] == 0xff ? buf[(y + i) * xsize + x + j] : color);
 		}
 	}
 	return;

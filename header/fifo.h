@@ -1,7 +1,4 @@
-#ifndef MTASK_H
-#define MTASK_H 1
-#include <mtask.h>
-#endif
+
 
 #define FIFO_KEY_START 		0x00
 #define FIFO_KEY_END		0xff
@@ -15,7 +12,7 @@ typedef struct FIFO32 {
 	struct TASK *task;
 }FIFO32, *FIFO32Ptr;
 
-void FIFO32__construct(struct FIFO32 *fifo, int size, uint *buf);
+void FIFO32__construct(struct FIFO32 *fifo, int size, uint *buf, struct TASK *task);
 int FIFO32_put(struct FIFO32 *fifo, uint data);
 int FIFO32_get(struct FIFO32 *fifo);
 int FIFO32_status(struct FIFO32 *fifo);

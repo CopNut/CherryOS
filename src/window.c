@@ -66,26 +66,26 @@ void Window__construct(){
 		"________________",
 		"________________",
 	};
-	Window_decode(windowIcon.min, 16,16, min, PINK);
-	Window_decode(windowIcon.max, 16, 16, max, PINK);
-	Window_decode(windowIcon.close, 16, 16, close, PINK);
+	Window_decode(windowIcon.min, 16,16, min);
+	Window_decode(windowIcon.max, 16, 16, max);
+	Window_decode(windowIcon.close, 16, 16, close);
 	return;
 }
 
-SheetPtr Window_alloc(char *title, ushort x, ushort y)
+SheetPtr Window_alloc(char *title, ushort x, ushort y, ushort xsize, ushort ysize)
 {
 	SheetPtr sht = Sheet_alloc();
 	uchar *buf_sheet = (uchar *)Memory_alloc_4k(memory, binfo->xsize * binfo->ysize);
-	Sheet_setbuf(sht, buf_sheet, 160, 90, 0xff);
-	Window_draw_frame(&windowIcon, sht->buf, sht->bxsize, sht->bysize);
+	Sheet_setbuf(sht, buf_sheet, xsize, ysize, 0xff);
+	Window_draw_frame(sht, BLACK, PINK, title);
+	fill_box(sht->buf, sht->bxsize, 0, fontinfo.height_box, WHITE, xsize, ysize - fontinfo.height_box);//window background color
 	Sheet_slide(sht, x, y);
 	Sheet_updown(sht, ctl->top);
-	Sheet_put_string(sht, title, 2, 0, BLACK, PINK);
 
 	return sht;
 }
 
-void Window_decode(uchar *buf, int xsize, int ysize, const uchar *src, char c){
+void Window_decode(uchar *buf, int xsize, int ysize, uchar *src){
 
 	for (int i = 0; i < ysize; ++i)
 	{
@@ -93,10 +93,10 @@ void Window_decode(uchar *buf, int xsize, int ysize, const uchar *src, char c){
 		{
 			switch(src[i*xsize+j]){
 				case '_':
-					buf[i*xsize+j] = BLACK;
+					buf[i*xsize+j] = 0xff;
 					break;
 				case 'X':
-					buf[i*xsize+j] = c;
+					buf[i*xsize+j] = 0x01;
 					break;
 				default:
 					break;
@@ -106,16 +106,26 @@ void Window_decode(uchar *buf, int xsize, int ysize, const uchar *src, char c){
 	return;
 }
 
-void Window_draw_frame(struct WindowIcon *this, uchar *buf, ushort xsize, ushort ysize){
+void Window_draw_frame(SheetPtr sht, char backcolor, char fontcolor, char *title){
 
-	fill_box(buf, xsize, 0, 0, BLACK, xsize, fontinfo.height_box);
-	copy_box(buf, xsize, xsize - 16 * 3, fontinfo.margin_vertical, this->min, 16, 16);
-	copy_box(buf, xsize, xsize - 16 * 2, fontinfo.margin_vertical, this->max, 16, 16);
-	copy_box(buf, xsize, xsize - 16 * 1, fontinfo.margin_vertical, this->close, 16, 16);
-	fill_box(buf, xsize, 0, fontinfo.height_box, BLACK, 1, ysize - fontinfo.height_box);
-	fill_box(buf, xsize, xsize - 1, fontinfo.height_box, BLACK, 1, ysize - fontinfo.height_box);
-	fill_box(buf, xsize, 0, ysize - 1, BLACK, xsize, 1);
-	fill_box(buf, xsize, 1, fontinfo.height_box, WHITE, xsize - 2, ysize - fontinfo.height_box - 1);
+	uchar *buf = sht->buf;
+	ushort xsize = sht->bxsize, ysize = sht->bysize;
+
+	fill_box(buf, xsize, 0, 0, backcolor, xsize, fontinfo.height_box);
+	Sheet_put_string(sht, title, 2, 0, backcolor, fontcolor);
+	copy_box(buf, xsize, xsize - 16 * 3, fontinfo.margin_vertical, windowIcon.min, 16, 16, fontcolor);
+	copy_box(buf, xsize, xsize - 16 * 2, fontinfo.margin_vertical, windowIcon.max, 16, 16, fontcolor);
+	copy_box(buf, xsize, xsize - 16 * 1, fontinfo.margin_vertical, windowIcon.close, 16, 16, fontcolor);
+	// fill_box(buf, xsize, 0, fontinfo.height_box, backcolor, 1, ysize - fontinfo.height_box);
+	// fill_box(buf, xsize, xsize - 1, fontinfo.height_box, backcolor, 1, ysize - fontinfo.height_box);
+	// fill_box(buf, xsize, 0, ysize - 1, backcolor, xsize, 1);
+
+	return;
+}
+
+void Window_draw_textbox(SheetPtr sht, uint x, uint y, uint xsize, uint ysize)
+{
+
 
 	return;
 }

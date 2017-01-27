@@ -5,7 +5,7 @@ BOTPAK	EQU		0x00280000		; bootpack‚Ìƒ[ƒhæ
 DSKCAC	EQU		0x00100000		; ƒfƒBƒXƒNƒLƒƒƒbƒVƒ…‚ÌêŠ
 DSKCAC0	EQU		0x00010000		; ƒfƒBƒXƒNƒLƒƒƒbƒVƒ…‚ÌêŠiƒŠƒAƒ‹ƒ‚[ƒhj
 
-VBEMODE EQU 	0x0101
+VBEMODE EQU 	0x0103
 
 ; BOOT_INFOŠÖŒW
 CYLS	EQU		0x0000			; ƒu[ƒgƒZƒNƒ^‚ªÝ’è‚·‚é

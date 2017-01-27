@@ -8,6 +8,7 @@ void Keyboard__construct(Keyboard *this, FIFO32Ptr fifo, uint shift)
 {
 	keyfifo = fifo;
 	data_shift_key = shift;
+	this->aim = 0;
 	Keyboard_wait_KBC_sendready();
 	io_8bits_out(PORT_KEYCMD, KEYCMD_WRITE_MODE);
 	Keyboard_wait_KBC_sendready();

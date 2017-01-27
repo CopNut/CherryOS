@@ -3,7 +3,7 @@
 
 #define FLAGS_OVERFLOW 0x0001
 
-void FIFO32__construct(struct FIFO32 *fifo, int size, uint *buf)
+void FIFO32__construct(struct FIFO32 *fifo, int size, uint *buf, struct TASK *task)
 {
 	fifo->buf = buf;
 	fifo->wp = 0;
@@ -11,6 +11,7 @@ void FIFO32__construct(struct FIFO32 *fifo, int size, uint *buf)
 	fifo->size = size;
 	fifo->free = size;
 	fifo->flags = 0;
+	fifo->task = task;
 	return;
 }
 

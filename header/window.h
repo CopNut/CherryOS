@@ -7,6 +7,7 @@ typedef struct { I16 x0,y0,x1,y1; } LCD_RECT;
 typedef struct Window{
 	uchar title[64];
 	SheetPtr sht;
+	ushort cursor_x, cursor_y;
 }Window, *WindowPtr;
 
 typedef struct WindowIcon{
@@ -17,6 +18,6 @@ typedef struct WindowIcon{
 
 // void Window__construct(WindowPtr this);
 void Window__construct(void);
-SheetPtr Window_alloc(char *title, ushort x, ushort y);
-void Window_draw_frame(struct WindowIcon *this, uchar *buf, ushort xsize, ushort ysize);
-void Window_decode(uchar *buf, int xszie, int ysize, const uchar *src, char c);
+SheetPtr Window_alloc(char *title, ushort x, ushort y, ushort xsize, ushort ysize);
+void Window_draw_frame(SheetPtr sht, char backcolor, char fontcolor, char *title);
+void Window_decode(uchar *buf, int xszie, int ysize, uchar *src);

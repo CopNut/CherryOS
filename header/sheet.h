@@ -29,3 +29,4 @@ void Sheet_refreshsub(int rfx0, int rfy0, int rfxsize, int rfysize, int h0, int 
 void Sheet_slide(struct SHEET *sht, int vx0, int vy0);
 void Sheet_free(struct SHEET *sht);
 void Sheet_put_string(Sheet *sht, char *str, int x, int y, char b, char c);
+SheetPtr Sheet_fetch_sht(int height);

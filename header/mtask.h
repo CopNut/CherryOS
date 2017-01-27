@@ -1,3 +1,8 @@
+#ifndef FIFO_H
+#define FIFO_H
+#include <fifo.h>
+#endif
+
 #define MAX_TASKS		1000	
 #define TASK_GDT0		3		
 #define MAX_TASKS_LV	100
@@ -13,6 +18,7 @@ typedef struct TSS32 {
 typedef struct TASK {
 	int sel, flags;
 	int level, priority;
+	FIFO32 fifo;
 	struct TSS32 tss;
 }Task, *TaskPtr;
 
@@ -35,3 +41,4 @@ TaskPtr Task_alloc(void);
 void Task_run(TaskPtr task, int level, int priority);
 void Task_switch(void);
 void Task_sleep(TaskPtr task);
+struct TASK *Task_now(void);

@@ -6,6 +6,7 @@
 //----------object keyboard----------
 typedef struct Keyboard {
 	uint flag;
+	int aim;
 }Keyboard, *KeyboardPtr;
 
 //
