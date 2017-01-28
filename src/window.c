@@ -72,12 +72,13 @@ void Window__construct(){
 	return;
 }
 
-SheetPtr Window_alloc(char *title, ushort x, ushort y, ushort xsize, ushort ysize)
+SheetPtr Window_alloc(struct TASK *task, ushort x, ushort y, ushort xsize, ushort ysize)
 {
 	SheetPtr sht = Sheet_alloc();
 	uchar *buf_sheet = (uchar *)Memory_alloc_4k(memory, binfo->xsize * binfo->ysize);
 	Sheet_setbuf(sht, buf_sheet, xsize, ysize, 0xff);
-	Window_draw_frame(sht, BLACK, PINK, title);
+	sht->task = task;
+	Window_draw_frame(sht, BLACK, PINK, task->name);
 	fill_box(sht->buf, sht->bxsize, 0, fontinfo.height_box, WHITE, xsize, ysize - fontinfo.height_box);//window background color
 	Sheet_slide(sht, x, y);
 	Sheet_updown(sht, ctl->top);

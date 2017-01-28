@@ -6,7 +6,7 @@
 #define FONT_HEIGHT				16
 #define FONT_WIDTH 				8
 #define FONT_MARGIN_VERTICAL	1
-#define FONT_MARGIN_PARALELL 	1
+#define FONT_MARGIN_PARALELL 	0
 #define FONT_COLOR				
 
 typedef struct Fontinfo{

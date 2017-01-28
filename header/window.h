@@ -18,6 +18,6 @@ typedef struct WindowIcon{
 
 // void Window__construct(WindowPtr this);
 void Window__construct(void);
-SheetPtr Window_alloc(char *title, ushort x, ushort y, ushort xsize, ushort ysize);
+SheetPtr Window_alloc(struct TASK *task, ushort x, ushort y, ushort xsize, ushort ysize);
 void Window_draw_frame(SheetPtr sht, char backcolor, char fontcolor, char *title);
 void Window_decode(uchar *buf, int xszie, int ysize, uchar *src);

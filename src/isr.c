@@ -33,38 +33,6 @@ void init_pic(void)
 	return;
 }
 
-// void inthandler20(int *esp)
-// //PIT timer
-// {
-// 	char ts = 0;
-// 	uint timeout = timerCtl.next->timeout;
-// 	uint data 	 = timerCtl.next->id;
-// 	FIFO32Ptr fifo = timerCtl.next->fifo;
-// 	io_8bits_out(PIC0_OCW2, 0x60);
-// 	timerCtl.count++;
-// 	while (timerCtl.count >= timeout)
-// 	{
-// 		if (timerCtl.next == timerPtr_task)
-// 		{
-// 			ts = 1;
-// 		}
-// 		else
-// 		{
-// 			FIFO32_put(fifo, data + data_shift_timer);
-// 		}
-// 		Timer_timeout();
-// 		timeout = timerCtl.next->timeout;
-// 		data 	 = timerCtl.next->id;
-// 		fifo = timerCtl.next->fifo;
-// 	}
-// 	if (ts != 0)
-// 	{
-// 		Task_switch();
-// 	}
-// 	return;
-// }
-
-
 void inthandler20(int *esp)
 {
 	struct TIMER *timer;

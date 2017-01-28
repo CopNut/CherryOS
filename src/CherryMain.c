@@ -21,28 +21,49 @@ SheetPtr sht_focus, sht_unfocus;
 TimerCtl timerCtl;
 
 void task_b_main(SheetPtr sheetBg);
-void console(SheetPtr sheetBg);
 
+// #define OUTER_SHT_ALLOC
+#ifdef OUTER_SHT_ALLOC
+void console(SheetPtr sheetBg);
+#endif
+#ifndef OUTER_SHT_ALLOC
+void console(void);
+#endif
+/*********************************************************/
+/*                    CHERRYMAIN                         */
+/*********************************************************/
 void CherryMain() {
 	binfo = (BootinfoPtr)ADDR_BOOTINFO;
 	memory = (MemoryPtr)ADDR_MEMBUF;
 	SheetPtr sheetBg, sheetMouse;
 	struct TIMER *timerPtr1, *timerPtr2, *timerPtr3;
 
-
-	char str[100];
+	char str[128];
 	char buf[160];
 	uint buf_fifo32[128];
 	uint data, count = 0;
 	int key_to;
 
+	/*********************************************************/
+	/*                   GDT IDT INIT                        */
+	/*********************************************************/
 	gdt_install();
 	idt_install();
+
+	/*********************************************************/
+	/*                      PIC INIT                         */
+	/*********************************************************/
 	init_pic();
 	io_sti();
 
+	/*********************************************************/
+	/*                     FIFO INIT                         */
+	/*********************************************************/
 	FIFO32__construct(&fifo32, 128, buf_fifo32, 0);
 
+	/*********************************************************/
+	/*                      PIT INIT                         */
+	/*********************************************************/
 	init_pit(512);
 	timerPtr1 = timer_alloc();
 	timer_init(timerPtr1, &fifo32, 0);
@@ -51,22 +72,40 @@ void CherryMain() {
 	timer_init(timerPtr3, &fifo32, 2);
 	timer_settime(timerPtr3, 100);
 
-	io_8bits_out(PIC0_IMR, 0xf8);//change from 0xf9 & 0xfe = 0xf8 ,means open the PIT 
+	io_8bits_out(PIC0_IMR, 0xf8);//change from 0xf9 & 0xfe = 0xf8 ,means open the PIT
 	io_8bits_out(PIC1_IMR, 0xef);
 
+	/*********************************************************/
+	/*                    MEMORY INIT                        */
+	/*********************************************************/
 	Memory__construct(memory, MEM_CHECK_START, MEM_CHECK_END);
 	Memory_free(memory, 0x00001000, 0x0009c000);
 	Memory_free(memory, 0x00400000, memory->physize - 0x00400000);
 
+	/*********************************************************/
+	/*                    SHTCTL INIT                        */
+	/*********************************************************/
 	ctl = ShtCtl__construct(binfo->vram, binfo->xsize, binfo->ysize, memory);
 
+	/*********************************************************/
+	/*                   KEYBOARD INIT                       */
+	/*********************************************************/
 	Keyboard__construct(&keyboard, &fifo32, 0);
 
+	/*********************************************************/
+	/*                     FONT INFO                         */
+	/*********************************************************/
 	Font__construct(FONT_HEIGHT, FONT_WIDTH, FONT_MARGIN_VERTICAL, FONT_MARGIN_PARALELL, BLACK);
 
+	/*********************************************************/
+	/*                     CURSOR INIT                       */
+	/*********************************************************/
 	ushort cursor_x = fontinfo.width_box, cursor_y = fontinfo.height_box;
 	char cursor_color = BLACK;
 
+	/*********************************************************/
+	/*                   SHEET DESKTOP                       */
+	/*********************************************************/
 	uchar *buf_bg = (uchar *)Memory_alloc_4k(memory, binfo->xsize * binfo->ysize);
 	Screen__construct(&screen, binfo, buf_bg, BCOLOR);
 	sheetBg = Sheet_alloc();
@@ -74,6 +113,9 @@ void CherryMain() {
 	Sheet_slide(sheetBg, 0, 0);
 	Sheet_updown(sheetBg, 0);
 
+	/*********************************************************/
+	/*                     SHEET MOUSE                       */
+	/*********************************************************/
 	Mouse__construct(&mouse, &fifo32, 256);
 	sheetMouse = Sheet_alloc();
 	Sheet_setbuf(sheetMouse, mouse.cursor, mouse.xsize, mouse.ysize, 0xff);
@@ -85,21 +127,35 @@ void CherryMain() {
 	sprintf(str, "(%d,%d)", mouse.px, mouse.py);
 	Sheet_put_string(sheetBg, str, 0, 0, BCOLOR, BLACK);
 
+	/*********************************************************/
+	/*                WINDOW'S ICON INIT                     */
+	/*********************************************************/
 	Window__construct();
 
-/*************************************/
-/*               TSS                 */
-/*************************************/
+	/*********************************************************/
+	/*                         TSS                           */
+	/*********************************************************/
 	TaskPtr task_a, task_b[4], task_cons;
-	SheetPtr sht_task_b[3], sht_console;
+	SheetPtr sht_task_a, sht_task_b[4], sht_cons;
 
-	task_a = Task_init();
-	fifo32.task = task_a;
-	Task_run(task_a, 1, 0);
-	SheetPtr sht_task_a = Window_alloc("task_a", 0, 400, 200, 150);
+	/*********************************************************/
+	/*             MTASK INIT == TASK_A                      */
+	/*********************************************************/
+	task_a = Task_init();//task_a is the main mtask function, and also a task;
+	task_a->name = "CherryMain";
+	sht_task_a = Window_alloc(task_a, 0, 400, 200, 150);
+	task_a->sht = sht_task_a;
+	fifo32.task = task_a;//used for awake task_a;
+	Task_run(task_a, 1, 0);//level 1, priority default 2
 
-	sht_console = Window_alloc("Console", 500, 400, 300, 200);
+	/*********************************************************/
+	/*                   TASK_CONSOLE                        */
+	/*********************************************************/
 	task_cons = Task_alloc();
+#ifdef OUTER_SHT_ALLOC
+	task_cons->name = "Console";
+	sht_cons = Window_alloc(task_cons, 500, 400, 300, 200);
+#endif
 	task_cons->tss.esp = Memory_alloc_4k(memory, 64 * 1024) + 64 * 1024 - 8;
 	task_cons->tss.eip = (int) &console - ADR_BOTPAK;
 	task_cons->tss.es = 1 * 8;
@@ -108,14 +164,19 @@ void CherryMain() {
 	task_cons->tss.ds = 1 * 8;
 	task_cons->tss.fs = 1 * 8;
 	task_cons->tss.gs = 1 * 8;
-	*((int *)(task_cons->tss.esp + 4)) = (int)sht_console;
-	Task_run(task_cons, 2, 2);		
+#ifdef OUTER_SHT_ALLOC	
+	*((int *)(task_cons->tss.esp + 4)) = (int)sht_cons;
+#endif
+	Task_run(task_cons, 2, 2);//level 2, priority 2;
 
+	/*********************************************************/
+	/*                      TASK_B[]                         */
+	/*********************************************************/
 	for (int i = 0; i < 3; ++i)
 	{
-		sprintf(str, "task_b_%d", i);
-		sht_task_b[i] = Window_alloc(str, i * 210, 100, 200, 150);
 		task_b[i] = Task_alloc();
+		task_b[i]->name = "Counter";
+		sht_task_b[i] = Window_alloc(task_b[i], i * 210, 100, 200, 150);
 		task_b[i]->tss.esp = Memory_alloc_4k(memory, 64 * 1024) + 64 * 1024 - 8;
 		task_b[i]->tss.eip = (int) &task_b_main - ADR_BOTPAK;
 		task_b[i]->tss.es = 1 * 8;
@@ -125,10 +186,12 @@ void CherryMain() {
 		task_b[i]->tss.fs = 1 * 8;
 		task_b[i]->tss.gs = 1 * 8;
 		*((int *)(task_b[i]->tss.esp + 4)) = (int)sht_task_b[i];
-		Task_run(task_b[i], 2, i + 1);		
+		Task_run(task_b[i], 2, i + 1);//level 2, priority i + 1
 	}
 
-
+	/*********************************************************/
+	/*                    ENABLE MOUSE                       */
+	/*********************************************************/
 	Mouse_enable();
 
 	while(1)
@@ -137,16 +200,32 @@ void CherryMain() {
 		Sheet_put_string(sheetBg, str, 0, 32, BCOLOR, BLACK);
 
 		io_cli();
+
+		/*********************************************************/
+		/*                    EMPTY FIFO                         */
+		/*********************************************************/
 		if (FIFO32_status(&fifo32) == 0){
 			Task_sleep(task_a);
 			io_sti();
-		}else{
+		}
+
+		/*********************************************************/
+		/*                   WAITING FIFO                        */
+		/*********************************************************/
+		else{
 			data = FIFO32_get(&fifo32);
 			io_sti();
+
+			/***********************************************************/
+			/*                        KEY DATA                         */
+			/***********************************************************/
 			if (FIFO_KEY_START <= data && data <= FIFO_KEY_END){
-				//data from keydoard
 				sprintf(str, "%x", data - data_shift_key);
 				Sheet_put_string(sheetBg, str, 0, 16, BCOLOR, BLACK);
+
+				/***********************************************************/
+				/*                       NORMAL KEY                        */
+				/***********************************************************/
 				if (data < 0x54 && data != 0)
 				{
 					if (sht_focus->height == sht_task_a->height)
@@ -165,6 +244,10 @@ void CherryMain() {
 						FIFO32_put(&task_cons->fifo, key_table[data]);
 					}
 				}
+
+				/***********************************************************/
+				/*                    BACKSPACE KEY                        */
+				/***********************************************************/
 				if (data == 0xe)
 				{
 					if (sht_focus->height == sht_task_a->height)
@@ -187,8 +270,12 @@ void CherryMain() {
 						FIFO32_put(&task_cons->fifo, 0xe);
 					}
 				}
-			}else if (FIFO_MOUSE_START <= data && data <= FIFO_MOUSE_END){
-				//data from mouse
+			}
+
+			/***********************************************************/
+			/*                      MOUSE DATA                         */
+			/***********************************************************/			
+			else if (FIFO_MOUSE_START <= data && data <= FIFO_MOUSE_END){
 				if(Mouse_dcode(&mouse, data - data_shift_mouse)){
 					sprintf(str, "%d", mouse.aim);
 					Sheet_put_string(sheetBg, str, 50, 50, BCOLOR, BLACK);
@@ -199,51 +286,95 @@ void CherryMain() {
 					sprintf(str, "(%d,%d)", mouse.px, mouse.py);
 					Sheet_put_string(sheetBg, str, 0, 0, BCOLOR, BLACK);
 
+					/***********************************************************/
+					/*                     LIFT CLICK                          */
+					/***********************************************************/
 					if ((mouse.button & 0x01) != 0)
 					{
 						sht_focus = Sheet_fetch_sht(mouse.aim);
-						Window_draw_frame(sht_focus, BLACK, PINK, "window");
-						Sheet_updown(sht_focus, ctl->top - 1);
+						if (sht_focus != sheetBg)
+						{
+							Window_draw_frame(sht_focus, BLACK, PINK, sht_focus->task->name);
+							Sheet_updown(sht_focus, ctl->top - 1);
+						}
 
+						/***********************************************************/
+						/*                    TASK WINDOW RECOLOR                  */
+						/***********************************************************/
 						for (int i = 0; i < MAX_SHEETS; i++) {
 							sht_unfocus = &ctl->sheets0[i];
 							if (sht_unfocus->flags != 0 && sht_unfocus != sheetBg && sht_unfocus != sheetMouse && sht_unfocus != sht_focus) {
-								Window_draw_frame(&ctl->sheets0[i], DARK_GRAY, WHITE, "window");
+								Window_draw_frame(&ctl->sheets0[i], DARK_GRAY, WHITE, sht_unfocus->task->name);
 								Sheet_refreshmap(sht_unfocus->vx0, sht_unfocus->vy0, sht_unfocus->bxsize, fontinfo.height_box, sht_unfocus->height, ctl->top);
 								Sheet_refreshsub(sht_unfocus->vx0, sht_unfocus->vy0, sht_unfocus->bxsize, fontinfo.height_box, sht_unfocus->height, sht_unfocus->height);
 							}
 						}
-
 						sprintf(str, "%d", sht_focus->height);
 						Sheet_put_string(sheetBg, str, 70, 50, BCOLOR, WHITE);
 
+						/***********************************************************/
+						/*                DESKTOP CANT BE MOVE                     */
+						/***********************************************************/						
 						if (sht_focus != sheetBg)
 						{
 							Sheet_slide(sht_focus, sht_focus->vx0 + mouse.rx, sht_focus->vy0 + mouse.ry);
 						}
 					}
+
+					/***********************************************************/
+					/*                    SHEETMOUSE MOVE                      */
+					/***********************************************************/					
 					Mouse_move(&mouse, &screen, sheetMouse);
 				}
-			}else{
-				//data from timer
+			}
+
+			/***********************************************************/
+			/*                       TIMER DATA                        */
+			/***********************************************************/
+			else{
 				switch(data){
+
+					/***********************************************************/
+					/*                      CURSOR TIMER                       */
+					/***********************************************************/					
 					case (FIFO_TIMER_START + 0) :
 					case (FIFO_TIMER_START + 1) :
-						if (data == FIFO_TIMER_START + 0)
+
+						/***********************************************************/
+						/*                      CURSOR BLINK                       */
+						/***********************************************************/											
+						if (sht_focus == task_a->sht)
 						{
-							timer_init(timerPtr1, &fifo32, 1);
-							cursor_color = WHITE;
+							if (data == FIFO_TIMER_START + 0)
+							{
+								timer_init(timerPtr1, &fifo32, 1);
+								cursor_color = BLACK;
+							}
+							else
+							{
+								timer_init(timerPtr1, &fifo32, 0);
+								cursor_color = WHITE;
+							}
+							timer_settime(timerPtr1, 50);							
+							fill_box(sht_task_a->buf, sht_task_a->bxsize, cursor_x, cursor_y, cursor_color, fontinfo.width_box, fontinfo.height_box);
+							Sheet_refreshmap(sht_task_a->vx0 + cursor_x, sht_task_a->vy0 + cursor_y, fontinfo.width_box, fontinfo.height_box, sht_task_a->height, ctl->top);												
+							Sheet_refreshsub(sht_task_a->vx0 + cursor_x, sht_task_a->vy0 + cursor_y, fontinfo.width_box, fontinfo.height_box, sht_task_a->height, sht_task_a->height);								
 						}
+
+						/***********************************************************/
+						/*                      CURSOR HIDE                        */
+						/***********************************************************/											
 						else
 						{
+							Sheet_put_string(sht_task_a, " ", cursor_x, cursor_y, WHITE, BLACK);
 							timer_init(timerPtr1, &fifo32, 0);
-							cursor_color = BLACK;
+							timer_settime(timerPtr1, 50);
 						}
-						timer_settime(timerPtr1, 50);
-						fill_box(sht_task_a->buf, sht_task_a->bxsize, cursor_x, cursor_y, cursor_color, fontinfo.width_box, fontinfo.height_box);
-						Sheet_refreshmap(sht_task_a->vx0 + cursor_x, sht_task_a->vy0 + cursor_y, fontinfo.width_box, fontinfo.height_box, sht_task_a->height, ctl->top);												
-						Sheet_refreshsub(sht_task_a->vx0 + cursor_x, sht_task_a->vy0 + cursor_y, fontinfo.width_box, fontinfo.height_box, sht_task_a->height, sht_task_a->height);
 						break;
+
+					/***********************************************************/
+					/*                      SECOND TIMER                       */
+					/***********************************************************/					
 					case (FIFO_TIMER_START + 2) :
 						timer_settime(timerPtr3, 100);
 						sprintf(str, "%d secs", ++count);
@@ -254,12 +385,17 @@ void CherryMain() {
 	}
 }
 
+/*********************************************************/
+/*                      COUNTER                          */
+/*********************************************************/
 void task_b_main(SheetPtr sheetBg){
 
 	uint buf_fifo[128], data, count = 0, count0 = 0;
 	char str[11];
-	TaskPtr task = Task_now();
 	struct TIMER *timerPtr1, *timerPtr2;
+
+	TaskPtr task = Task_now();
+	task->sht = sheetBg;
 
 	FIFO32__construct(&task->fifo, 128, buf_fifo, 0);
 
@@ -300,15 +436,30 @@ void task_b_main(SheetPtr sheetBg){
 	}
 }
 
-void console(SheetPtr sheetBg){
 
+/*********************************************************/
+/*                      CONSOLE                          */
+/*********************************************************/
+#ifdef OUTER_SHT_ALLOC
+void console(SheetPtr sheetBg)
+#endif
+#ifndef OUTER_SHT_ALLOC
+void console(void)
+#endif
+{
 	TimerPtr timerPtr1;
-	TaskPtr task = Task_now();
-
 	int data, buf_fifo[128];
 	char str[100];
 	ushort cursor_x = fontinfo.width_box, cursor_y = fontinfo.height_box;
 	char cursor_color = WHITE;
+
+	TaskPtr task = Task_now();
+
+#ifndef OUTER_SHT_ALLOC
+	task->name = "Console";
+	task->sht = Window_alloc(task, 500, 400, 300, 200);
+	SheetPtr sheetBg = task->sht;
+#endif
 
 	FIFO32__construct(&task->fifo, 128, buf_fifo, task);
 
@@ -328,7 +479,14 @@ void console(SheetPtr sheetBg){
 			data = FIFO32_get(&task->fifo);
 			io_sti();
 
+			/*********************************************************/
+			/*                   KEYBOARD DATA                       */
+			/*********************************************************/
 			if (FIFO_KEY_START <= data && data <= FIFO_KEY_END){
+
+				/*********************************************************/
+				/*                  BACKSPACE KEY                        */
+				/*********************************************************/
 				if (data == 0xe)
 				{
 					if (sht_focus->height == sheetBg->height)
@@ -348,7 +506,12 @@ void console(SheetPtr sheetBg){
 							Sheet_refreshsub(sheetBg->vx0 + cursor_x, sheetBg->vy0 + cursor_y, 2 * fontinfo.width_box, fontinfo.height_box, sheetBg->height, sheetBg->height);							
 						}
 					}
-				}else{
+				}
+
+				/*********************************************************/
+				/*                     NORMAL KEY                        */
+				/*********************************************************/
+				else{
 					if (sht_focus->height == sheetBg->height)
 					{
 						if (cursor_x < sheetBg->bxsize)
@@ -363,33 +526,54 @@ void console(SheetPtr sheetBg){
 						}
 					}
 				}
-
-
-			}else{
-				switch(data){
-					case (FIFO_TIMER_START + 0) :
-					case (FIFO_TIMER_START + 1) :
-						if (data == FIFO_TIMER_START + 0)
-						{
-							timer_init(timerPtr1, &task->fifo, 1);
-							cursor_color = WHITE;
-						}
-						else
-						{
-							timer_init(timerPtr1, &task->fifo, 0);
-							cursor_color = BLACK;
-						}
-						timer_settime(timerPtr1, 50);
-						fill_box(sheetBg->buf, sheetBg->bxsize, cursor_x, cursor_y, cursor_color, fontinfo.width_box, fontinfo.height_box);
-						Sheet_refreshmap(sheetBg->vx0 + cursor_x, sheetBg->vy0 + cursor_y, fontinfo.width_box, fontinfo.height_box, sheetBg->height, ctl->top);												
-						Sheet_refreshsub(sheetBg->vx0 + cursor_x, sheetBg->vy0 + cursor_y, fontinfo.width_box, fontinfo.height_box, sheetBg->height, sheetBg->height);
-						break;
-				}
-
 			}
 
+			/*********************************************************/
+			/*                    TIMER DATA                         */
+			/*********************************************************/
+			else{
+				switch(data){
+
+					/***********************************************************/
+					/*                      CURSOR TIMER                       */
+					/***********************************************************/					
+					case (FIFO_TIMER_START + 0) :
+					case (FIFO_TIMER_START + 1) :
+
+						/***********************************************************/
+						/*                      CURSOR BLINK                       */
+						/***********************************************************/											
+						if (sht_focus == task->sht)
+						{
+							if (data == FIFO_TIMER_START + 0)
+							{
+								timer_init(timerPtr1, &task->fifo, 1);
+								cursor_color = BLACK;
+							}
+							else
+							{
+								timer_init(timerPtr1, &task->fifo, 0);
+								cursor_color = WHITE;
+							}
+							timer_settime(timerPtr1, 50);							
+							fill_box(sheetBg->buf, sheetBg->bxsize, cursor_x, cursor_y, cursor_color, fontinfo.width_box, fontinfo.height_box);
+							Sheet_refreshmap(sheetBg->vx0 + cursor_x, sheetBg->vy0 + cursor_y, fontinfo.width_box, fontinfo.height_box, sheetBg->height, ctl->top);												
+							Sheet_refreshsub(sheetBg->vx0 + cursor_x, sheetBg->vy0 + cursor_y, fontinfo.width_box, fontinfo.height_box, sheetBg->height, sheetBg->height);								
+						}
+
+						/***********************************************************/
+						/*                      CURSOR HIDE                        */
+						/***********************************************************/											
+						else
+						{
+							Sheet_put_string(sheetBg, " ", cursor_x, cursor_y, WHITE, BLACK);
+							timer_init(timerPtr1, &task->fifo, 0);
+							timer_settime(timerPtr1, 50);
+						}
+						break;
+				}
+			}
 		}
 	}
-
 	return;
 }

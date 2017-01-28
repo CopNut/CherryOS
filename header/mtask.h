@@ -16,9 +16,11 @@ typedef struct TSS32 {
 }TSS, *TSSPtr;
 
 typedef struct TASK {
+	char *name;
 	int sel, flags;
 	int level, priority;
 	FIFO32 fifo;
+	struct SHEET *sht;
 	struct TSS32 tss;
 }Task, *TaskPtr;
 

@@ -17,6 +17,12 @@ DEL      = del
 
 GCC_OPTION = -fstrength-reduce -fomit-frame-pointer -finline-functions -nostdinc
 DATA_IN_TEXT = -Wa,-R
+HEADER = 	$(HEADERPATH)bootinfo.h $(HEADERPATH)CherryOS.h 	$(HEADERPATH)window.h \
+			$(HEADERPATH)fifo.h 	$(HEADERPATH)font.h 		$(HEADERPATH)keyboard.h \
+			$(HEADERPATH)memory.h 	$(HEADERPATH)mouse.h 		$(HEADERPATH)mtask.h \
+			$(HEADERPATH)screen.h 	$(HEADERPATH)sheet.h 		$(HEADERPATH)stdarg.h \
+			$(HEADERPATH)stddef.h 	$(HEADERPATH)stdio.h 		$(HEADERPATH)timer.h \
+			
 OBJ_CHERRYKERNEL = CherryMain.o asmFunc.o asFunc.o isr.o gdtidt.o fifo.o screen.o font.o keyboard.o mouse.o memory.o sheet.o timer.o window.o mtask.o $(LIBPATH)ascTable.o $(LIBPATH)cherryLib.o
 
 # 1.  $@     表示要生成的目标
@@ -31,7 +37,7 @@ default :
 %.bin : %.asm Makefile
 	$(NASM) $*.asm -o $*.bin
 
-%.o : %.c Makefile $(HEADERPATH)stdio.h  $(HEADERPATH)CherryOS.h
+%.o : %.c Makefile $(HEADER)
 	$(GCC) -c -o $*.o $*.c -I $(HEADERPATH) $(GCC_OPTION)
 
 asmFunc.o : asmFunc.asm Makefile
@@ -40,7 +46,7 @@ asmFunc.o : asmFunc.asm Makefile
 asFunc.o : asFunc.asm Makefile
 	$(AS) asFunc.asm -o asFunc.o
 
-CherryKernel.tmp : $(OBJ_CHERRYKERNEL) $(LINKPATH)link.ld Makefile
+CherryKernel.tmp : $(OBJ_CHERRYKERNEL) $(LINKPATH)link.ld Makefile 
 	$(LD) -T $(LINKPATH)link.ld -o CherryKernel.tmp $(OBJ_CHERRYKERNEL) -Map CherryKernel.map
 
 CherryKernel.bin : CherryKernel.tmp Makefile
