@@ -23,3 +23,5 @@ void Keyboard_wait_KBC_sendready(void);
 #define KBC_MODE				0x47
 #define KEYCMD_SENDTO_MOUSE		0xd4
 #define MOUSECMD_ENABLE			0xf4
+
+#define KEYCMD_LED 				0xed

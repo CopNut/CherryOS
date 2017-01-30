@@ -37,10 +37,12 @@ void CherryMain() {
 	memory = (MemoryPtr)ADDR_MEMBUF;
 	SheetPtr sheetBg, sheetMouse;
 	struct TIMER *timerPtr1, *timerPtr2, *timerPtr3;
+	FIFO32 keycmd;
+	int key_shift = 0, key_leds = (binfo->leds >> 4) & 7, keycmd_wait = -1;
 
 	char str[128];
 	char buf[160];
-	uint buf_fifo32[128];
+	uint buf_fifo32[128], buf_keycmd[32];
 	uint data, count = 0;
 	int key_to;
 
@@ -60,6 +62,7 @@ void CherryMain() {
 	/*                     FIFO INIT                         */
 	/*********************************************************/
 	FIFO32__construct(&fifo32, 128, buf_fifo32, 0);
+	FIFO32__construct(&keycmd, 32, buf_keycmd, 0);
 
 	/*********************************************************/
 	/*                      PIT INIT                         */
@@ -194,10 +197,21 @@ void CherryMain() {
 	/*********************************************************/
 	Mouse_enable();
 
+	FIFO32_put(&keycmd, KEYCMD_LED);
+	FIFO32_put(&keycmd, key_leds);
+
 	while(1)
 	{
-		sprintf(str, "%d", timerCtl.count);
-		Sheet_put_string(sheetBg, str, 0, 32, BCOLOR, BLACK);
+		// sprintf(str, "%d", timerCtl.count);
+		// Sheet_put_string(sheetBg, str, 0, 32, BCOLOR, BLACK);
+
+		if (FIFO32_status(&keycmd) > 0 && keycmd_wait < 0)
+		{
+			keycmd_wait = FIFO32_get(&keycmd);
+			Keyboard_wait_KBC_sendready();
+			io_8bits_out(PORT_KEYDAT, keycmd_wait);
+		}
+
 
 		io_cli();
 
@@ -223,16 +237,42 @@ void CherryMain() {
 				sprintf(str, "%x", data - data_shift_key);
 				Sheet_put_string(sheetBg, str, 0, 16, BCOLOR, BLACK);
 
+				if (data < 0x80)
+				{
+					if (key_shift == 0)
+					{
+						str[0] = keytable0[data];
+					}
+					else
+					{
+						str[0] = keytable1[data];
+					}
+				}
+				else
+				{
+					str[0] = 0;
+				}
+
+				/***********************************************************/
+				/*                 CAPLOCK SHIFT SUPPORT                   */
+				/***********************************************************/
+				if ('A' <= str[0] && str[0] <= 'Z') 
+				{
+					if (((key_leds & 4) == 0 && key_shift == 0) || ((key_leds & 4) != 0 && key_shift != 0))
+					{
+						str[0] += 0x20;
+					}
+				}
+
 				/***********************************************************/
 				/*                       NORMAL KEY                        */
 				/***********************************************************/
-				if (data < 0x54 && data != 0)
+				if (str[0] != 0)
 				{
-					if (sht_focus->height == sht_task_a->height)
+					if (sht_focus->task == task_a)
 					{
-						if (cursor_x < sheetBg->bxsize)
+						if (cursor_x < sht_task_a->bxsize)
 						{
-							str[0] = key_table[data];
 							str[1] = 0;
 							Sheet_put_string(sht_task_a, str, cursor_x, cursor_y, WHITE, PINK);
 							cursor_x += fontinfo.width_box;
@@ -240,9 +280,12 @@ void CherryMain() {
 							Sheet_refreshmap(sht_task_a->vx0 + cursor_x, sht_task_a->vy0 + cursor_y, fontinfo.width_box, fontinfo.height_box, sht_task_a->height, ctl->top);						
 							Sheet_refreshsub(sht_task_a->vx0 + cursor_x, sht_task_a->vy0 + cursor_y, fontinfo.width_box, fontinfo.height_box, sht_task_a->height, sht_task_a->height);
 						}
-					}else{
-						FIFO32_put(&task_cons->fifo, key_table[data]);
 					}
+					else
+					{
+						FIFO32_put(&sht_focus->task->fifo, str[0]);
+					}
+
 				}
 
 				/***********************************************************/
@@ -252,23 +295,97 @@ void CherryMain() {
 				{
 					if (sht_focus->height == sht_task_a->height)
 					{
-						cursor_x -= fontinfo.width_box;
 						if (cursor_x > fontinfo.width_box)
 						{
+							Sheet_put_string(sht_task_a, " ", cursor_x, cursor_y, WHITE, BLACK);
 							cursor_x -= fontinfo.width_box;	
-							fill_box(sht_task_a->buf, sht_task_a->bxsize, cursor_x, cursor_y, BLACK, fontinfo.width_box, fontinfo.height_box);
-							fill_box(sht_task_a->buf, sht_task_a->bxsize, cursor_x + fontinfo.width_box, cursor_y, WHITE, 2 * fontinfo.width_box, fontinfo.height_box);
-							Sheet_refreshmap(sht_task_a->vx0 + cursor_x, sht_task_a->vy0 + cursor_y, 3 * fontinfo.width_box, fontinfo.height_box, sht_task_a->height, ctl->top);						
-							Sheet_refreshsub(sht_task_a->vx0 + cursor_x, sht_task_a->vy0 + cursor_y, 3 * fontinfo.width_box, fontinfo.height_box, sht_task_a->height, sht_task_a->height);							
-						}else{
-							fill_box(sht_task_a->buf, sht_task_a->bxsize, cursor_x, cursor_y, BLACK, fontinfo.width_box, fontinfo.height_box);							
-							fill_box(sht_task_a->buf, sht_task_a->bxsize, cursor_x + fontinfo.width_box, cursor_y, WHITE, fontinfo.width_box, fontinfo.height_box);
-							Sheet_refreshmap(sht_task_a->vx0 + cursor_x, sht_task_a->vy0 + cursor_y, 2 * fontinfo.width_box, fontinfo.height_box, sht_task_a->height, ctl->top);						
-							Sheet_refreshsub(sht_task_a->vx0 + cursor_x, sht_task_a->vy0 + cursor_y, 2 * fontinfo.width_box, fontinfo.height_box, sht_task_a->height, sht_task_a->height);							
 						}
+						fill_box(sht_task_a->buf, sht_task_a->bxsize, cursor_x, cursor_y, BLACK, fontinfo.width_box, fontinfo.height_box);							
+						Sheet_refreshmap(sht_task_a->vx0 + cursor_x, sht_task_a->vy0 + cursor_y, fontinfo.width_box, fontinfo.height_box, sht_task_a->height, ctl->top);						
+						Sheet_refreshsub(sht_task_a->vx0 + cursor_x, sht_task_a->vy0 + cursor_y, fontinfo.width_box, fontinfo.height_box, sht_task_a->height, sht_task_a->height);							
+						
 					}else{
-						FIFO32_put(&task_cons->fifo, 0xe);
+						FIFO32_put(&sht_focus->task->fifo, 0xe);
 					}
+				}
+
+				/***********************************************************/
+				/*                        LSHIFT ON                        */
+				/***********************************************************/
+				if (data == 0x2a)
+				{
+					key_shift |= 1;
+				}
+
+				/***********************************************************/
+				/*                       RSHIFT ON                         */
+				/***********************************************************/
+				if (data == 0x36)
+				{
+					key_shift |= 2;
+				}
+
+				/***********************************************************/
+				/*                      LSHIFT OFF                         */
+				/***********************************************************/
+				if (data == 0xaa)
+				{
+					key_shift &= ~1;
+				}
+
+				/***********************************************************/
+				/*                       RSHIFT OFF                        */
+				/***********************************************************/
+				if (data == 0xba)
+				{
+					key_shift &= ~2;
+				}
+
+				/***********************************************************/
+				/*                         CAPLOCK                         */
+				/***********************************************************/
+				if (data == 0x3a)
+				{
+					key_leds ^= 4;
+					FIFO32_put(&keycmd, KEYCMD_LED);
+					FIFO32_put(&keycmd, key_leds);
+				}
+
+				/***********************************************************/
+				/*                         NUMLOCK                         */
+				/***********************************************************/
+				if (data == 0x45)
+				{
+					key_leds ^= 2;
+					FIFO32_put(&keycmd, KEYCMD_LED);
+					FIFO32_put(&keycmd, key_leds);
+				}
+
+				/***********************************************************/
+				/*                      SCROLLLOCK                         */
+				/***********************************************************/
+				if (data == 0x46)
+				{
+					key_leds ^= 1;
+					FIFO32_put(&keycmd, KEYCMD_LED);
+					FIFO32_put(&keycmd, key_leds);
+				}
+
+				/***********************************************************/
+				/*                     DATA RECEIVED                       */
+				/***********************************************************/
+				if (data == 0xfa)
+				{
+					keycmd_wait = -1;
+				}
+
+				/***********************************************************/
+				/*                   DATA NOT RECEIVED                     */
+				/***********************************************************/
+				if (data == 0xfe)
+				{
+					Keyboard_wait_KBC_sendready();
+					io_8bits_out(PORT_KEYDAT, keycmd_wait);
 				}
 			}
 
@@ -491,20 +608,15 @@ void console(void)
 				{
 					if (sht_focus->height == sheetBg->height)
 					{
-						cursor_x -= fontinfo.width_box;
 						if (cursor_x > fontinfo.width_box)
 						{
+							Sheet_put_string(sheetBg, " ", cursor_x, cursor_y, WHITE, BLACK);
 							cursor_x -= fontinfo.width_box;	
-							fill_box(sheetBg->buf, sheetBg->bxsize, cursor_x, cursor_y, BLACK, fontinfo.width_box, fontinfo.height_box);
-							fill_box(sheetBg->buf, sheetBg->bxsize, cursor_x + fontinfo.width_box, cursor_y, WHITE, 2 * fontinfo.width_box, fontinfo.height_box);
-							Sheet_refreshmap(sheetBg->vx0 + cursor_x, sheetBg->vy0 + cursor_y, 3 * fontinfo.width_box, fontinfo.height_box, sheetBg->height, ctl->top);						
-							Sheet_refreshsub(sheetBg->vx0 + cursor_x, sheetBg->vy0 + cursor_y, 3 * fontinfo.width_box, fontinfo.height_box, sheetBg->height, sheetBg->height);							
-						}else{
-							fill_box(sheetBg->buf, sheetBg->bxsize, cursor_x, cursor_y, BLACK, fontinfo.width_box, fontinfo.height_box);							
-							fill_box(sheetBg->buf, sheetBg->bxsize, cursor_x + fontinfo.width_box, cursor_y, WHITE, fontinfo.width_box, fontinfo.height_box);
-							Sheet_refreshmap(sheetBg->vx0 + cursor_x, sheetBg->vy0 + cursor_y, 2 * fontinfo.width_box, fontinfo.height_box, sheetBg->height, ctl->top);						
-							Sheet_refreshsub(sheetBg->vx0 + cursor_x, sheetBg->vy0 + cursor_y, 2 * fontinfo.width_box, fontinfo.height_box, sheetBg->height, sheetBg->height);							
 						}
+						fill_box(sheetBg->buf, sheetBg->bxsize, cursor_x, cursor_y, BLACK, fontinfo.width_box, fontinfo.height_box);							
+						Sheet_refreshmap(sheetBg->vx0 + cursor_x, sheetBg->vy0 + cursor_y, fontinfo.width_box, fontinfo.height_box, sheetBg->height, ctl->top);						
+						Sheet_refreshsub(sheetBg->vx0 + cursor_x, sheetBg->vy0 + cursor_y, fontinfo.width_box, fontinfo.height_box, sheetBg->height, sheetBg->height);							
+
 					}
 				}
 
